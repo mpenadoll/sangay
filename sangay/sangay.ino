@@ -31,6 +31,7 @@ void setup() {
   pinMode(PWMpin, OUTPUT);
   pinMode(dirPin, OUTPUT);
   pinMode(lightPin, OUTPUT);
+  pinMode(brakePin, OUTPUT);
 
   //---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
    
@@ -89,12 +90,15 @@ void motorDriver (float milliVolts) {
   if (milliVolts == 0){
     digitalWrite(dirPin, HIGH);
     analogWrite(PWMpin, 0);
+    digitalWrite(brakePin, LOW); //engage brake
   }
   else if (milliVolts < 0) {
+    digitalWrite(brakePin, HIGH); //disengage brake
     digitalWrite(dirPin, HIGH);
     analogWrite(PWMpin, map(abs(milliVolts),0,24000,15,255));
   }
   else {
+    digitalWrite(brakePin, HIGH); //disengage brake
     digitalWrite(dirPin, LOW);
     analogWrite(PWMpin, map(abs(milliVolts),0,24000,15,255));
   }

@@ -30,6 +30,7 @@ const int limitSwitchPin = 6; //limitSwitch signal in
 const int encoderApin = 3;  //Best Performance: both pins have interrupt capability
 const int encoderBpin = 2;  //Best Performance: both pins have interrupt capability
 const int lightPin = 7; //pin for the LED mosfet
+const int brakePin = 9; //pin for the motor brake MOSFET
 
 // Calculate variables in units of enconder pulses. Note - gear ratio was removed
 float stroke = PPR * 2 * strokeMM / (pulleyRadius * 2 * 3.14);  // stroke [pulses]
