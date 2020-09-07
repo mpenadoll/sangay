@@ -8,6 +8,16 @@ float homeSpeedMM = 30.0; // homing speed [mm/s]
 float accelMM = 150.0;        // acceleration of rack [mm/s^2]
 float PPR = 1440.0;  // number of pulses of encoder per rev
 
+// Calculate variables in units of enconder pulses. Note - gear ratio was removed
+float stroke = PPR * 2 * strokeMM / (pulleyRadius * 2 * 3.14);  // stroke [pulses]
+float maxSpeed = PPR * 2 * maxSpeedMM / (pulleyRadius * 2 * 3.14 * 1000); // max speed [pulses/ms]
+float homeSpeed = PPR * 2 * homeSpeedMM / (pulleyRadius * 2 * 3.14 * 1000); // max speed [pulses/ms]
+float accel = PPR * 2 * accelMM / (pulleyRadius * 2 * 3.14 * 1000 * 1000);  // acceleration [pulses/ms^2]
+float accelTime = maxSpeed / accel; //time to accelerate and decelerate from stop [ms]
+float homeAccelTime = homeSpeed / accel;
+float accelDistance = 0.5 * accel * accelTime * accelTime; //the minimum distance to accelerate to max speed [pulses]
+float homeAccelDistance = 0.5 * accel * homeAccelTime * homeAccelTime;
+
 // Set PID Controller Settings for Position Control
 float Kp = 7800.0; // proportional gain [V / m]
 float Ki = 200.0; // integral gain [V / (m*s)]
@@ -20,7 +30,7 @@ const unsigned int debounceDelay = 50;  // the debounce time; increase if the ou
 const int error = 5; // error [pulses] allowable for position control
 const unsigned int limitTime = 100; // time to move into the limit switch [ms]
 const int homeStep = 3; // distance to travel each homing step/loop
-const int lightPosition = 0.2 * PPR * 2 * strokeMM / (pulleyRadius * 2 * 3.14); // position to turn on lights [pulses]
+const int lightPosition = 0.2 * stroke; // position to turn on lights [pulses]
 const int supplyVoltage = 24000; //system voltage
 
 // PINS
@@ -33,13 +43,3 @@ const int encoderBpin = 2;  //Best Performance: both pins have interrupt capabil
 const int lightPin = 7; //pin for the LED mosfet
 const int brakePin = 9; //pin for the motor brake MOSFET
 const int degenPWMpin = 11; //pin to set the PWM on the degen power resistors
-
-// Calculate variables in units of enconder pulses. Note - gear ratio was removed
-float stroke = PPR * 2 * strokeMM / (pulleyRadius * 2 * 3.14);  // stroke [pulses]
-float maxSpeed = PPR * 2 * maxSpeedMM / (pulleyRadius * 2 * 3.14 * 1000); // max speed [pulses/ms]
-float homeSpeed = PPR * 2 * homeSpeedMM / (pulleyRadius * 2 * 3.14 * 1000); // max speed [pulses/ms]
-float accel = PPR * 2 * accelMM / (pulleyRadius * 2 * 3.14 * 1000 * 1000);  // acceleration [pulses/ms^2]
-float accelTime = maxSpeed / accel; //time to accelerate and decelerate from stop [ms]
-float homeAccelTime = homeSpeed / accel;
-float accelDistance = 0.5 * accel * accelTime * accelTime; //the minimum distance to accelerate to max speed [pulses]
-float homeAccelDistance = 0.5 * accel * homeAccelTime * homeAccelTime;
