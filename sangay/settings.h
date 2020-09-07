@@ -21,6 +21,7 @@ const int error = 5; // error [pulses] allowable for position control
 const unsigned int limitTime = 100; // time to move into the limit switch [ms]
 const int homeStep = 3; // distance to travel each homing step/loop
 const int lightPosition = 0.2 * PPR * 2 * strokeMM / (pulleyRadius * 2 * 3.14); // position to turn on lights [pulses]
+const int supplyVoltage = 24000; //system voltage
 
 // PINS
 const int dirPin = 4;  //pin to enable (high) driver
@@ -31,6 +32,7 @@ const int encoderApin = 3;  //Best Performance: both pins have interrupt capabil
 const int encoderBpin = 2;  //Best Performance: both pins have interrupt capability
 const int lightPin = 7; //pin for the LED mosfet
 const int brakePin = 9; //pin for the motor brake MOSFET
+const int degenPWMpin = 11; //pin to set the PWM on the degen power resistors
 
 // Calculate variables in units of enconder pulses. Note - gear ratio was removed
 float stroke = PPR * 2 * strokeMM / (pulleyRadius * 2 * 3.14);  // stroke [pulses]

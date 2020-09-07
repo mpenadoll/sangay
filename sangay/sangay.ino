@@ -86,21 +86,22 @@ void setup() {
 }
 
 void motorDriver (float milliVolts) {
-  milliVolts = constrain(milliVolts, -24000, 24000);
+  // constrain the voltage command to system's supplyVoltage
+  milliVolts = constrain(milliVolts, -supplyVoltage, supplyVoltage);
   if (milliVolts == 0){
-    digitalWrite(dirPin, HIGH);
-    analogWrite(PWMpin, 0);
+    digitalWrite(dirPin, HIGH); //set direction for motor driver
+    analogWrite(PWMpin, 0); //set PWM for motor driver
     digitalWrite(brakePin, LOW); //engage brake
   }
   else if (milliVolts < 0) {
     digitalWrite(brakePin, HIGH); //disengage brake
-    digitalWrite(dirPin, HIGH);
-    analogWrite(PWMpin, map(abs(milliVolts),0,24000,15,255));
+    digitalWrite(dirPin, HIGH); //set direction for motor driver
+    analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,15,255)); //set PWM for motor driver
   }
   else {
     digitalWrite(brakePin, HIGH); //disengage brake
-    digitalWrite(dirPin, LOW);
-    analogWrite(PWMpin, map(abs(milliVolts),0,24000,15,255));
+    digitalWrite(dirPin, LOW); //set direction for motor driver
+    analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,15,255)); //set PWM for motor driver
   }
 }
 
