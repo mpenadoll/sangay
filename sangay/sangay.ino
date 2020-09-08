@@ -134,7 +134,7 @@ void updateSensors(){
 }
 
 void setPosition(int newPosition){
-  motorDriver(0);
+  motorDriver(0, sgn(currentSpeed));
   encoder.write(newPosition);
   while (currentSpeed != 0){
     updateSensors();
@@ -164,7 +164,7 @@ void stopNow(){
       int deltaT = now - startTime; // calculate the time change from begginning of stop
       posSetpoint = startPosition + stopDir*(startSpeed*deltaT - accel*deltaT*deltaT/2); // [pulses]
       milliVolts = computePID(posSetpoint, currentPosition);
-      motorDriver(milliVolts);
+      motorDriver(milliVolts, sgn(currentSpeed));
       // save static variables for next round
       lastTime = now;
     }
@@ -174,13 +174,13 @@ void stopNow(){
   while (currentSpeed != 0) {
     if (now - lastTime >= sampleTime){
       milliVolts = computePID(endPosition, currentPosition);
-      motorDriver(milliVolts);
+      motorDriver(milliVolts, sgn(currentSpeed));
       lastTime = now;
     }
     updateSensors();
     now = millis();
   }
-  motorDriver(0);
+  motorDriver(0, sgn(currentSpeed));
   Serial.println("DONE STOPPING");
 }
 
@@ -200,7 +200,7 @@ void homeNow(){
     if (now - lastTime >= sampleTime){
       posSetpoint = integrateProfile(); // [pulses]
       milliVolts = computePID(posSetpoint, currentPosition);
-      motorDriver(milliVolts);
+      motorDriver(milliVolts, sgn(currentSpeed));
       // save static variables for next round
       lastTime = now;
     }
@@ -216,7 +216,7 @@ void homeNow(){
     if (now - lastTime >= sampleTime){
       posSetpoint += homeStep;
       milliVolts = computePID(posSetpoint, currentPosition);
-      motorDriver(milliVolts);
+      motorDriver(milliVolts, sgn(currentSpeed));
       lastTime = now;
     }
     updateSensors();
@@ -227,20 +227,20 @@ void homeNow(){
     if (now - lastTime >= sampleTime){
       posSetpoint += homeStep;
       milliVolts = computePID(posSetpoint, currentPosition);
-      motorDriver(milliVolts);
+      motorDriver(milliVolts, sgn(currentSpeed));
       lastTime = now;
     }
     updateSensors();
     now = millis();
   }
-  motorDriver(0);
+  motorDriver(0, sgn(currentSpeed));
   lastTime = now - sampleTime;
   integrateStart = true;
   while (!limitSwitch && go){
     if (now - lastTime >= sampleTime){
       posSetpoint -= homeStep;
       milliVolts = computePID(posSetpoint, currentPosition);
-      motorDriver(milliVolts);
+      motorDriver(milliVolts, sgn(currentSpeed));
       lastTime = now;
     }
     updateSensors();
@@ -251,13 +251,13 @@ void homeNow(){
     if (now - lastTime >= sampleTime){
       posSetpoint -= homeStep;
       milliVolts = computePID(posSetpoint, currentPosition);
-      motorDriver(milliVolts);
+      motorDriver(milliVolts, sgn(currentSpeed));
       lastTime = now;
     }
     updateSensors();
     now = millis();
   }
-  motorDriver(0);
+  if (currentSpeed != 0) stopNow();
   if (limitSwitch && go) {
     setPosition(0);
     homed = true;
@@ -320,7 +320,7 @@ void loop() {
     if (now - lastTime >= sampleTime){
       int posSetpoint = integrateProfile(); // [pulses]
       float milliVolts = computePID(posSetpoint, currentPosition);
-      motorDriver(milliVolts);
+      motorDriver(milliVolts, sgn(currentSpeed));
       // save static variables for next round
       lastTime = now;
     }
@@ -328,6 +328,6 @@ void loop() {
   else if (go && !homed) homeNow();
   else {
     if (currentSpeed != 0) stopNow();
-    motorDriver(0);
+    motorDriver(0, sgn(currentSpeed));
   }
 }
