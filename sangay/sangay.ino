@@ -14,6 +14,7 @@ float currentSpeed; //the current speed (average) [pulses / ms]
 int profilePositions[4]; //{x0, x1, x2, x3} x0 is the start position, and x3 is the end position [pulses]
 unsigned int profileTimes[4]; //{t0, t1, t2, t3} t0 is the start time, and t3 is the end time [ms]
 bool integrateStart = true; // initializes the start of an integration profile
+int posDir = LOW; //positive direction of motor driver dir pin
 
 // Initialize Encoder
 Encoder encoder(encoderApin, encoderBpin);
@@ -32,6 +33,7 @@ void setup() {
   pinMode(dirPin, OUTPUT);
   pinMode(lightPin, OUTPUT);
   pinMode(brakePin, OUTPUT);
+  pinMode(degenPWMpin, OUTPUT);
 
   //---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
    
@@ -83,26 +85,6 @@ void setup() {
   Serial.println(go);
   Serial.println("-------------------");
   Serial.println("READY");
-}
-
-void motorDriver (float milliVolts) {
-  // constrain the voltage command to system's supplyVoltage
-  milliVolts = constrain(milliVolts, -supplyVoltage, supplyVoltage);
-  if (milliVolts == 0){
-    digitalWrite(dirPin, HIGH); //set direction for motor driver
-    analogWrite(PWMpin, 0); //set PWM for motor driver
-    digitalWrite(brakePin, LOW); //engage brake
-  }
-  else if (milliVolts < 0) {
-    digitalWrite(brakePin, HIGH); //disengage brake
-    digitalWrite(dirPin, HIGH); //set direction for motor driver
-    analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,15,255)); //set PWM for motor driver
-  }
-  else {
-    digitalWrite(brakePin, HIGH); //disengage brake
-    digitalWrite(dirPin, LOW); //set direction for motor driver
-    analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,15,255)); //set PWM for motor driver
-  }
 }
 
 static inline int8_t sgn(float val) {
