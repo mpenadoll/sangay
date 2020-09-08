@@ -97,6 +97,6 @@ void motorDriver (float milliVolts, int8_t motorDir) {
     analogWrite(PWMpin, 0); //set PWM for motor driver
     analogWrite(degenPWMpin, 0); //set degen PWM for resistors
     digitalWrite(brakePin, LOW); //engage brake
-    Serial.println("ERROR: MOTOR DRIVER, ELSE")
+    Serial.println("ERROR: MOTOR DRIVER, ELSE");
   }
 }
