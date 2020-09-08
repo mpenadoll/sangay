@@ -1,4 +1,7 @@
-// Spice Rack Controller
+/* Sangay (Spice Rack Controller)
+ *  Sangay is an active stratovolcano in central Ecuador. The eruption that started in 1934 is still ongoing.
+ *  Elevation: 17,388ft
+*/
 #include <Encoder.h>
 #include "settings.h"
 
