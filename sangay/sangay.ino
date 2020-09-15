@@ -17,7 +17,6 @@ float currentSpeed; //the current speed (average) [pulses / ms]
 int profilePositions[4]; //{x0, x1, x2, x3} x0 is the start position, and x3 is the end position [pulses]
 unsigned int profileTimes[4]; //{t0, t1, t2, t3} t0 is the start time, and t3 is the end time [ms]
 bool integrateStart = true; // initializes the start of an integration profile
-int posDir = LOW; //positive direction of motor driver dir pin
 
 // Initialize Encoder
 Encoder encoder(encoderApin, encoderBpin);
