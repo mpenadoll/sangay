@@ -7,107 +7,61 @@ inputs:
     2. motorDir, int8_t, sign of the current speed
 */
 
-void motorDriver (float milliVolts, int8_t motorDir)
+// FSM STATES
+enum motorState_enum {STOP, PWR_MOVE, DEGEN}; //declare the states as an enum
+motorState_enum motorState = STOP; // create the state variable of type state_enum
+String motorStateNames[4] = {"STOP", "PWR_MOVE", "DEGEN"}; // names of states for printing
+
+void motorDriver (float milliVolts)
 {
   // constrain the voltage command to system's supplyVoltage
   milliVolts = constrain(milliVolts, -supplyVoltage, supplyVoltage);
 
-  //case 1: stopped w/ brake
-  //turn off motor and apply brake
-  if (motorDir == 0 && milliVolts == 0)
+  switch (motorState)
   {
-    analogWrite(PWMpin, 0); //set PWM for motor driver
-    analogWrite(degenPWMpin, 0); //set degen PWM for resistors
-    digitalWrite(brakePin, LOW); //engage brake
-  }
+    // -------------------------------
+    case STOP:
 
-  //case 2: stopped w/ power
-  //release brake, and move motor negatively
-  else if (motorDir == 0 && milliVolts < 0)
-  {
-    digitalWrite(brakePin, HIGH); //disengage brake
-    analogWrite(degenPWMpin, 0); //set degen PWM for resistors
-    digitalWrite(dirPin, !posDir); //set direction for motor driver
-    analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,15,255)); //set PWM for motor driver
-  }
+      analogWrite(PWMpin, 0); //set PWM for motor driver
+      analogWrite(degenPWMpin, 255); //set degen PWM for resistors
+      digitalWrite(brakePin, LOW); //engage brake
 
-  //case 3: stopped w/ power
-  //release brake, and move motor positively
-  else if (motorDir == 0 && milliVolts > 0)
-  {
-    digitalWrite(brakePin, HIGH); //disengage brake
-    analogWrite(degenPWMpin, 0); //set degen PWM for resistors
-    digitalWrite(dirPin, posDir); //set direction for motor driver
-    analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,15,255)); //set PWM for motor driver
-  }
+      if (milliVolts != 0)
+      {
+        motorState = PWR_MOVE;
+      }
+    
+      break;
+    // -------------------------------
+    case PWR_MOVE:
 
-  //case 4: lowering w/out power
-  //release brake, and let motor coast negatively
-  else if (motorDir < 0 && milliVolts == 0)
-  {
-    digitalWrite(brakePin, HIGH); //disengage brake
-    analogWrite(degenPWMpin, 0); //set degen PWM for resistors
-    digitalWrite(dirPin, !posDir); //set direction for motor driver
-    analogWrite(PWMpin, 0); //set PWM for motor driver
-  }
+      if (sgn(milliVolts) != sgn(currentSpeed) && currentSpeed > minDegenSpeed) motorState = DEGEN;
 
-  //case 5: lowering w/ power
-  //release brake, and move motor negatively
-  else if (motorDir < 0 && milliVolts < 0)
-  {
-    digitalWrite(brakePin, HIGH); //disengage brake
-    analogWrite(degenPWMpin, 0); //set degen PWM for resistors
-    digitalWrite(dirPin, !posDir); //set direction for motor driver
-    analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,15,255)); //set PWM for motor driver
-  }
+      else
+      {
+        digitalWrite(brakePin, HIGH); //disengage brake
+        analogWrite(degenPWMpin, 0); //set degen PWM for resistors
+        digitalWrite(dirPin, sgn(milliVolts)); //set direction for motor driver
+        analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,0,255)); //set PWM for motor driver
+      }
+      
+      if (milliVolts == 0 && currentSpeed == 0) motorState = STOP;
 
-  //case 6: lowering w/ degen
-  //release brake, and degen motor negatively
-  else if (motorDir < 0 && milliVolts > 0)
-  {
-    digitalWrite(brakePin, HIGH); //disengage brake
-    digitalWrite(dirPin, !posDir); //set direction for motor driver
-    analogWrite(PWMpin, 0); //set PWM for motor driver
-    analogWrite(degenPWMpin, map(abs(milliVolts),0,supplyVoltage,15,255)); //set degen PWM for resistors
-  }
+      break;
+    // -------------------------------
+    case DEGEN:
 
-  //case 7: lifting w/out power
-  //release brake, and let motor coast positively
-  else if (motorDir > 0 && milliVolts == 0)
-  {
-    digitalWrite(brakePin, HIGH); //disengage brake
-    analogWrite(degenPWMpin, 0); //set degen PWM for resistors
-    digitalWrite(dirPin, posDir); //set direction for motor driver
-    analogWrite(PWMpin, 0); //set PWM for motor driver
-  }
+      digitalWrite(brakePin, HIGH); //disengage brake
+      analogWrite(PWMpin, 0); //set PWM for motor driver
+      analogWrite(degenPWMpin, map(abs(milliVolts),0,supplyVoltage,0,255)); //set degen PWM for resistors
 
-  //case 8: lifting w/ degen
-  //release brake, and degen motor positively
-  else if (motorDir > 0 && milliVolts < 0)
-  {
-    digitalWrite(brakePin, HIGH); //disengage brake
-    digitalWrite(dirPin, posDir); //set direction for motor driver
-    analogWrite(PWMpin, 0); //set PWM for motor driver
-    analogWrite(degenPWMpin, map(abs(milliVolts),0,supplyVoltage,15,255)); //set degen PWM for resistors
-  }
+      if (sgn(milliVolts) == sgn(currentSpeed) || currentSpeed < minDegenSpeed) motorState = PWR_MOVE;
 
-  //case 9: lifting w/ power
-  //release brake, and move motor positively
-  else if (motorDir > 0 && milliVolts > 0)
-  {
-    digitalWrite(brakePin, HIGH); //disengage brake
-    analogWrite(degenPWMpin, 0); //set degen PWM for resistors
-    digitalWrite(dirPin, posDir); //set direction for motor driver
-    analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,15,255)); //set PWM for motor driver
-  }
-
-  //error
-  //turn off motor and apply brake
-  else
-  {
-    analogWrite(PWMpin, 0); //set PWM for motor driver
-    analogWrite(degenPWMpin, 0); //set degen PWM for resistors
-    digitalWrite(brakePin, LOW); //engage brake
-    Serial.println("ERROR: MOTOR DRIVER, ELSE");
+      break;
+    // -------------------------------
+    default:
+      state = STOP;
+      break;
+    // -------------------------------
   }
 }

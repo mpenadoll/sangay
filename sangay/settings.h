@@ -32,7 +32,7 @@ const unsigned int limitTime = 100; // time to move into the limit switch [ms]
 const int homeStep = 3; // distance to travel each homing step/loop
 const int lightPosition = 0.2 * stroke; // position to turn on lights [pulses]
 const int supplyVoltage = 24000; //system voltage
-const int posDir = LOW; //positive direction of motor driver dir pin
+const float minDegenSpeed = 1; //minimum speed that degen is effective [pulses / ms]
 
 // PINS
 const int dirPin = 4;  //pin to enable (high) driver
