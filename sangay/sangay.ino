@@ -2,11 +2,6 @@
  *  Sangay is an active stratovolcano in central Ecuador. The eruption that started in 1934 is still ongoing.
  *  Elevation: 17,388ft
 */
-#include <Encoder.h>
-#include "settings.h"
-#include "PIDcontroller.h"
-#include "motorDriver.h"
-#include "profileBuilder.h"
 
 // VARIABLES
 bool go = false; // the state of the drive system (go or stop)
@@ -20,6 +15,13 @@ float currentSpeed; //the current speed (average) [pulses / ms]
 int profilePositions[4]; //{x0, x1, x2, x3} x0 is the start position, and x3 is the end position [pulses]
 unsigned int profileTimes[4]; //{t0, t1, t2, t3} t0 is the start time, and t3 is the end time [ms]
 bool integrateStart = true; // initializes the start of an integration profile
+
+// Import Libraries
+#include <Encoder.h>
+#include "settings.h"
+#include "PIDcontroller.h"
+#include "motorDriver.h"
+#include "profileBuilder.h"
 
 // Initialize Encoder
 Encoder encoder(encoderApin, encoderBpin);
@@ -90,12 +92,6 @@ void setup() {
   Serial.println(go);
   Serial.println("-------------------");
   Serial.println("READY");
-}
-
-static inline int8_t sgn(float val) {
- if (val < 0) return -1;
- if (val==0) return 0;
- return 1;
 }
 
 void updateSensors(){
