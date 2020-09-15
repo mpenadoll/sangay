@@ -4,6 +4,9 @@
 */
 #include <Encoder.h>
 #include "settings.h"
+#include "PIDcontroller.h"
+#include "motorDriver.h"
+#include "profileBuilder.h"
 
 // VARIABLES
 bool go = false; // the state of the drive system (go or stop)
