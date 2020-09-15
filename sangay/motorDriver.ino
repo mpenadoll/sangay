@@ -3,8 +3,8 @@ Controls an H-Bridge BDC driver, motor brake MOSFET, and degenerative resistor M
 Motor brake (for holding position)
 Degenerative braking (for slowing motor)
 inputs:
-    1. milliVolts, float, from PID controller
-    2. motorDir, int8_t, sign of the current speed
+    1. milliVolts, float, from PID controller [mV]
+    2. motorSpeed, float, [pulses / ms]
 */
 
 // FSM STATES
@@ -12,7 +12,7 @@ enum motorState_enum {STOP, PWR_MOVE, DEGEN}; //declare the states as an enum
 motorState_enum motorState = STOP; // create the state variable of type state_enum
 String motorStateNames[4] = {"STOP", "PWR_MOVE", "DEGEN"}; // names of states for printing
 
-void motorDriver (float milliVolts)
+void motorDriver (float milliVolts, float motorSpeed)
 {
   // constrain the voltage command to system's supplyVoltage
   milliVolts = constrain(milliVolts, -supplyVoltage, supplyVoltage);
@@ -35,7 +35,7 @@ void motorDriver (float milliVolts)
     // -------------------------------
     case PWR_MOVE:
 
-      if (sgn(milliVolts) != sgn(currentSpeed) && currentSpeed > minDegenSpeed) motorState = DEGEN;
+      if (sgn(milliVolts) != sgn(motorSpeed) && motorSpeed > minDegenSpeed) motorState = DEGEN;
 
       else
       {
@@ -45,7 +45,7 @@ void motorDriver (float milliVolts)
         analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,0,255)); //set PWM for motor driver
       }
       
-      if (milliVolts == 0 && currentSpeed == 0) motorState = STOP;
+      if (milliVolts == 0 && motorSpeed == 0) motorState = STOP;
 
       break;
     // -------------------------------
@@ -55,7 +55,7 @@ void motorDriver (float milliVolts)
       analogWrite(PWMpin, 0); //set PWM for motor driver
       analogWrite(degenPWMpin, map(abs(milliVolts),0,supplyVoltage,0,255)); //set degen PWM for resistors
 
-      if (sgn(milliVolts) == sgn(currentSpeed) || currentSpeed < minDegenSpeed) motorState = PWR_MOVE;
+      if (sgn(milliVolts) == sgn(motorSpeed) || motorSpeed < minDegenSpeed) motorState = PWR_MOVE;
 
       break;
     // -------------------------------
