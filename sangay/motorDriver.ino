@@ -60,7 +60,7 @@ void motorDriver (float milliVolts)
       break;
     // -------------------------------
     default:
-      state = STOP;
+      motorState = STOP;
       break;
     // -------------------------------
   }
