@@ -20,7 +20,7 @@ float homeAccelDistance = 0.5 * accel * homeAccelTime * homeAccelTime;
 
 // Set PID Controller Settings for Position Control
 float Kp = 7800.0; // proportional gain [V / m]
-float Ki = 200.0; // integral gain [V / (m*s)]
+float Ki = 0.0; // integral gain [V / (m*s)]
 float Kd = 0.0; // derivative gain [V * s / m]
 float pulseKp, pulseKi, pulseKd; // pulse conversion declarations
 
@@ -33,6 +33,7 @@ const int homeStep = 3; // distance to travel each homing step/loop
 const int lightPosition = 0.2 * stroke; // position to turn on lights [pulses]
 const int supplyVoltage = 24000; //system voltage
 const float minDegenSpeed = 1; //minimum speed that degen is effective [pulses / ms]
+const int minPWM = 255 * 1 / 24; // minimum PWM value that motor will move [analog]
 
 // PINS
 const int dirPin = 4;  //pin to enable (high) driver

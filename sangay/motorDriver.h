@@ -42,7 +42,7 @@ void motorDriver (float milliVolts, float motorSpeed)
         digitalWrite(brakePin, HIGH); //disengage brake
         analogWrite(degenPWMpin, 0); //set degen PWM for resistors
         digitalWrite(dirPin, sgn(milliVolts)); //set direction for motor driver
-        analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,0,255)); //set PWM for motor driver
+        analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,minPWM,255)); //set PWM for motor driver
       }
       
       if (milliVolts == 0 && motorSpeed == 0) motorState = STOP;

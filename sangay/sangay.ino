@@ -15,6 +15,7 @@ float currentSpeed; //the current speed (average) [pulses / ms]
 int profilePositions[4]; //{x0, x1, x2, x3} x0 is the start position, and x3 is the end position [pulses]
 unsigned int profileTimes[4]; //{t0, t1, t2, t3} t0 is the start time, and t3 is the end time [ms]
 bool integrateStart = true; // initializes the start of an integration profile
+bool debugPrint = false;
 
 // Import Libraries
 #include <Encoder.h>
@@ -132,12 +133,28 @@ void updateSensors(){
     }
   }
   lastButtonState = reading; // save the reading. Next time through the loop, it'll be the lastButtonState
+
+  static unsigned int lastPrintTime = now;
+  if (now - lastPrintTime >= 1000)
+  {
+    debugPrint = true;
+    lastPrintTime = now;
+  }
 }
 
 void moveTo(int positionSetpoint)
 {
   float milliVolts = computePID(positionSetpoint, currentPosition);
   motorDriver(milliVolts, currentSpeed);
+
+  if (debugPrint)
+  {
+    Serial.println(motorStateNames[motorState]);
+    Serial.print("mV: ");
+    Serial.println(milliVolts);
+    Serial.println("-------------------------");
+    debugPrint = false;
+  }
 }
 
 void stopNow(){
