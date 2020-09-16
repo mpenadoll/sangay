@@ -92,11 +92,11 @@ void motorDriver (float milliVolts) {
   }
   else if (milliVolts < 0) {
     digitalWrite(dirPin, HIGH);
-    analogWrite(PWMpin, map(abs(milliVolts),0,24000,15,255));
+    analogWrite(PWMpin, map(abs(milliVolts),0,24000,11,255));
   }
   else {
     digitalWrite(dirPin, LOW);
-    analogWrite(PWMpin, map(abs(milliVolts),0,24000,15,255));
+    analogWrite(PWMpin, map(abs(milliVolts),0,24000,11,255));
   }
 }
 
