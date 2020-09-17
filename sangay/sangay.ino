@@ -162,7 +162,7 @@ void stopNow(){
   int8_t stopDir = sgn(currentSpeed);
   unsigned int startTime = millis();
   int startPosition = currentPosition;
-  if (stopDir == 1) startPosition += 1.4*currentSpeed*sampleTime; // add fudge factor to make stopping smooth
+  if (stopDir == 1) startPosition += 1.0*currentSpeed*sampleTime; // add fudge factor to make stopping smooth
   else startPosition += 1.0*currentSpeed*sampleTime;
   float startSpeed = abs(currentSpeed);
   int distance = accel * (startSpeed/accel) * (startSpeed/accel) / 2;
@@ -191,6 +191,7 @@ void stopNow(){
     updateSensors();
     now = millis();
   }
+  delay(50);
   Serial.println("DONE STOPPING");
 }
 
