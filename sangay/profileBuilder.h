@@ -3,15 +3,21 @@
  * when called, integrates along that profile and returns target setpoint
 */
 
-void buildProfile(){
+void buildProfile(int target, float speed)
+{
   // Function to calculate the position at times of the trapezoidal OR triangular profile
-  // Note that profilePosition[3] is the target point, and should already be set unless !homed
-  
-  if (!homed){
-    // create honming specific profile
-    profilePositions[0] = currentPosition;
-    profilePositions[3] = -stroke;
-    profileTimes[0] = 0; //set t0 to time 0 [ms]
+  // Note that profilePosition[3] is the target point, and should be set to the input
+
+  // starting point t0, x0
+  profileTimes[0] = 0; //set t0 to time 0 [ms]
+  profilePositions[0] = currentPosition; //set x0 to current position [pulses]
+
+  // set end point to target
+  profilePositions[3] = target;
+
+  // create honming specific profile
+  if (!homed)
+  {
     profileTimes[1] = profileTimes[0] + homeAccelTime; //time at beginning of table top [ms]
     profilePositions[1] = profilePositions[0] - homeAccelDistance; //position at beginning of table top [pulses]
     // End of table top point t2 / x2
@@ -21,14 +27,14 @@ void buildProfile(){
     profileTimes[3] = profileTimes[2] + homeAccelTime; //time at the end of the profile [ms]
   }
 
-  else {
-    // Starting Point t0 / x0
-    profileTimes[0] = 0; //set t0 to time 0 [ms]
-    profilePositions[0] = currentPosition; //set start position to the current position [pulses]
+  else
+  {
+
     int distance = profilePositions[3] - profilePositions[0]; //distance to travel for profile [pulses]
     
     // Trapezoidal Profile Calculations
-    if (abs(distance) >= 2*accelDistance){
+    if (abs(distance) >= 2*accelDistance)
+    {
       // End of Acceleration Point t1 / x1
       profileTimes[1] = profileTimes[0] + accelTime; //time at beginning of table top [ms]
       profilePositions[1] = profilePositions[0] + sgn(distance)*accelDistance; //position at beginning of table top [pulses]
@@ -41,7 +47,8 @@ void buildProfile(){
       profileTimes[3] = profileTimes[2] + accelTime; //time at the end of the profile [ms]
     }
     // Triangular Profile Calculations
-    else {
+    else
+    {
       // End of Acceleration Point t1 / x1
       profilePositions[1] = profilePositions[0] + sgn(distance)*distance/2; //position at top of triangle [pulses]
       profileTimes[1] = profileTimes[0] + sqrt(abs(distance)/accel); //time at top of triangle [ms]
@@ -56,7 +63,8 @@ void buildProfile(){
   }
 }
 
-int integrateProfile(){
+int integrateProfile()
+{
   // Integrates the profile and returns a new position setpoint for the controller
   unsigned int now = millis(); //what time is it?
   static unsigned int startTime = now;

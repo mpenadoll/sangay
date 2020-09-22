@@ -17,6 +17,11 @@ unsigned int profileTimes[4]; //{t0, t1, t2, t3} t0 is the start time, and t3 is
 bool integrateStart = true; // initializes the start of an integration profile
 bool debugPrint = false;
 
+// FSM STATES
+enum state_enum {STOPPED, HOMING, MOVING_UP, MOVING_DOWN}; //declare the states as an enum
+state_enum state = STOPPED; // create the state variable of type state_enum
+String stateNames[4] = {"STOPPED", "HOMING", "MOVING_UP", "MOVING_DOWN"}; // names of states for printing
+
 // Import Libraries
 #include <Encoder.h>
 #include "settings.h"
@@ -129,7 +134,6 @@ void updateSensors(){
       go = !go;       // change system state to go
       Serial.print("GO: ");
       Serial.println(go);
-      if (!go && homed) dir = -dir; // reverse directions if motion stopped with button, and homed
     }
   }
   lastButtonState = reading; // save the reading. Next time through the loop, it'll be the lastButtonState
@@ -142,11 +146,19 @@ void updateSensors(){
   }
 }
 
-void moveTo(int positionSetpoint)
+void moveTo(int target)
 {
-  float milliVolts = computePID(positionSetpoint, currentPosition);
-  motorDriver(milliVolts, currentSpeed);
-
+  if (abs(currentPosition - target) < error && currentSpeed == 0)
+  {
+    motorDriver(0, currentSpeed);
+  }
+  else
+  {
+    int positionSetpoint = integrateProfile();
+    float milliVolts = computePID(positionSetpoint, currentPosition);
+    motorDriver(milliVolts, currentSpeed);
+  }
+  
   if (debugPrint)
   {
     Serial.println(motorStateNames[motorState]);
@@ -156,6 +168,204 @@ void moveTo(int positionSetpoint)
     debugPrint = false;
   }
 }
+
+
+void loop()
+{
+  updateSensors();
+  int target = 0;
+
+  //if the position is greater than the lighting up position, turn on the LED strip
+  //otherwise, turn it off
+  if (currentPosition > lightPosition)
+  {
+    digitalWrite(lightPin, HIGH);
+  }
+  else
+  {
+    digitalWrite(lightPin, LOW);
+  }
+
+  // {STOPPED, HOMING, MOVING_UP, MOVING_DOWN}
+  switch (state)
+  {
+    // -------------------------------
+    case STOPPED:
+
+      // if motorstate not stop
+      // set target as soon as possible
+      // build a half triangle profile
+      // moveto target
+
+      if (go)
+      { 
+        if (!homed)
+        {
+          state = HOMING;
+          target = -stroke;
+        }
+        else if (dir == 1)
+        {
+          state = MOVING_UP;
+          target = stroke;
+        }
+        else if (dir == -1)
+        {
+          state = MOVING_DOWN;
+          target = 0;
+        }
+
+        integrateStart = true;
+        buildProfile(target);
+      }
+
+      break;
+    // -------------------------------
+    case HOMING:
+
+      moveTo(target);
+
+      // if limit switch, move up until not limit for set distance
+      if (limitSwitch)
+      {
+        // set target to as soon as possible
+        // build a profile that takes us there (half triangle)
+        while (currentSpeed < 0 && go)
+        {
+          moveTo(target);
+          updateSensors();
+        }
+        target = stroke;
+        integrateStart = true;
+        buildProfile(target, 1);
+        while (limitSwitch && go)
+        {
+          moveTo(target);
+          updateSensors();
+        }
+        // set target to X distance from current position
+        // build a profile (half trapezoid)
+        while (motorState != STOP && go)
+        {
+          moveTo(target);
+          updateSensors();
+        }
+        if (go)
+        {
+          encoder.write(0);
+          homed = true;
+        }
+      }
+
+      if (motorState == STOP) go = false;
+
+      if (!go)
+      {
+        dir = 1;
+        state = STOPPED;
+      }
+
+      break;
+    // -------------------------------
+    case MOVING_UP:
+
+      moveTo(target);
+
+      if (motorState == STOP) go = false;
+
+      if (!go)
+      {
+        dir = -dir;
+        state = STOPPED;
+      }
+
+      break;
+    // -------------------------------
+    case MOVING_DOWN:
+
+      moveTo(target);
+
+      if (motorState == STOP) go = false;
+
+      if (limitSwitch)
+      {
+        homed = false;
+        go = false;
+      }
+
+      if (!go)
+      {
+        dir = -dir;
+        state = STOPPED;
+      }
+
+      break;
+    // -------------------------------
+  }
+}
+
+void loop() {
+
+  //check if system thinks it is at 0 but is not at home
+  if (abs(currentPosition) < error && !limitSwitch && homed) {
+    homed = false;
+    Serial.println("HOME FAILED (OUTSIDE LIMIT)");
+  }
+
+  //check if system is at home and doesn't know it, and travelling downwards
+  if (limitSwitch && abs(currentPosition) > error && dir == -1 && homed) {
+    homed = false;
+    Serial.println("HOME FAILED (INSIDE LIMIT)");
+  }
+
+  //check if target has been reached
+  if (abs(currentPosition - profilePositions[3]) < error && currentSpeed == 0){
+    dir = -dir;
+    go = false;
+    Serial.println("TARGET REACHED");
+  }
+
+  //if the direction has changed, update the target and build the profile
+  if (dir != lastDir){
+    if (dir == 1) profilePositions[3] = stroke;
+    else profilePositions[3] = 0;
+    buildProfile();
+    lastDir = dir;
+    integrateStart = true;
+    Serial.println("PROFILE BUILT");
+    printProfile();
+  }
+
+  //if the position is greater than the lighting up position, turn on the LED strip
+  //otherwise, turn it off
+  if (currentPosition > lightPosition)
+  {
+    digitalWrite(lightPin, HIGH);
+  }
+  else
+  {
+    digitalWrite(lightPin, LOW);
+  }
+  
+  updateSensors();
+  
+  if (go && homed) {
+    //Serial.println("RUNNING");
+    unsigned int now = millis();
+    static unsigned int lastTime = now - sampleTime;
+    if (now - lastTime >= sampleTime){
+      int posSetpoint = integrateProfile(); // [pulses]
+      moveTo(posSetpoint);
+      // save static variables for next round
+      lastTime = now;
+    }
+  }
+  else if (go && !homed) homeNow();
+  else {
+    if (currentSpeed != 0) stopNow();
+  }
+}
+
 
 void stopNow(){
   Serial.println("STOPPING");
@@ -271,66 +481,4 @@ void homeNow(){
   dir = 1;
   lastDir = -1;
   Serial.println("DONE HOMING");
-}
-
-void loop() {
-
-  //check if system thinks it is at 0 but is not at home
-  if (abs(currentPosition) < error && !limitSwitch && homed) {
-    homed = false;
-    Serial.println("HOME FAILED (OUTSIDE LIMIT)");
-  }
-
-  //check if system is at home and doesn't know it, and travelling downwards
-  if (limitSwitch && abs(currentPosition) > error && dir == -1 && homed) {
-    homed = false;
-    Serial.println("HOME FAILED (INSIDE LIMIT)");
-  }
-
-  //check if target has been reached
-  if (abs(currentPosition - profilePositions[3]) < error && currentSpeed == 0){
-    dir = -dir;
-    go = false;
-    Serial.println("TARGET REACHED");
-  }
-
-  //if the direction has changed, update the target and build the profile
-  if (dir != lastDir){
-    if (dir == 1) profilePositions[3] = stroke;
-    else profilePositions[3] = 0;
-    buildProfile();
-    lastDir = dir;
-    integrateStart = true;
-    Serial.println("PROFILE BUILT");
-    printProfile();
-  }
-
-  //if the position is greater than the lighting up position, turn on the LED strip
-  //otherwise, turn it off
-  if (currentPosition > lightPosition)
-  {
-    digitalWrite(lightPin, HIGH);
-  }
-  else
-  {
-    digitalWrite(lightPin, LOW);
-  }
-  
-  updateSensors();
-  
-  if (go && homed) {
-    //Serial.println("RUNNING");
-    unsigned int now = millis();
-    static unsigned int lastTime = now - sampleTime;
-    if (now - lastTime >= sampleTime){
-      int posSetpoint = integrateProfile(); // [pulses]
-      moveTo(posSetpoint);
-      // save static variables for next round
-      lastTime = now;
-    }
-  }
-  else if (go && !homed) homeNow();
-  else {
-    if (currentSpeed != 0) stopNow();
-  }
 }
