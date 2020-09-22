@@ -146,16 +146,15 @@ void updateSensors(){
   }
 }
 
-void moveTo(int target)
+void moveTo(int setpoint)
 {
-  if (abs(currentPosition - target) < error && currentSpeed == 0)
+  if (abs(currentPosition - setpoint) < error && currentSpeed == 0)
   {
     motorDriver(0, currentSpeed);
   }
   else
   {
-    int positionSetpoint = integrateProfile();
-    float milliVolts = computePID(positionSetpoint, currentPosition);
+    float milliVolts = computePID(setpoint, currentPosition);
     motorDriver(milliVolts, currentSpeed);
   }
   
@@ -173,7 +172,9 @@ void moveTo(int target)
 void loop()
 {
   updateSensors();
-  int target = 0;
+  int target = 0; // finishing position of a profile
+  int setpoint = 0; // next step along a profile
+  bool homeFlag = false; // flag for setting 0 when hitting limit switch
 
   //if the position is greater than the lighting up position, turn on the LED strip
   //otherwise, turn it off
@@ -223,38 +224,21 @@ void loop()
     // -------------------------------
     case HOMING:
 
-      moveTo(target);
-
       // if limit switch, move up until not limit for set distance
       if (limitSwitch)
       {
-        // set target to as soon as possible
-        // build a profile that takes us there (half triangle)
-        while (currentSpeed < 0 && go)
-        {
-          moveTo(target);
-          updateSensors();
-        }
-        target = stroke;
-        integrateStart = true;
-        buildProfile(target, 1);
-        while (limitSwitch && go)
-        {
-          moveTo(target);
-          updateSensors();
-        }
-        // set target to X distance from current position
-        // build a profile (half trapezoid)
-        while (motorState != STOP && go)
-        {
-          moveTo(target);
-          updateSensors();
-        }
-        if (go)
+        if (!homeFlag)
         {
           encoder.write(0);
-          homed = true;
+          setpoint = 0;
+          homeFlag = true;
         }
+        moveTo(setpoint);
+      }
+      else
+      {
+        setpoint = integrateProfile();
+        moveTo(setpoint);
       }
 
       if (motorState == STOP) go = false;
@@ -269,7 +253,8 @@ void loop()
     // -------------------------------
     case MOVING_UP:
 
-      moveTo(target);
+      setpoint = integrateProfile();
+      moveTo(setpoint);
 
       if (motorState == STOP) go = false;
 
@@ -283,7 +268,8 @@ void loop()
     // -------------------------------
     case MOVING_DOWN:
 
-      moveTo(target);
+      setpoint = integrateProfile();
+      moveTo(setpoint);
 
       if (motorState == STOP) go = false;
 
