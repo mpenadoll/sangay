@@ -3,7 +3,7 @@
  * when called, integrates along that profile and returns target setpoint
 */
 
-void buildProfile(int target, float speed)
+void buildProfile(int target)
 {
   // Function to calculate the position at times of the trapezoidal OR triangular profile
   // Note that profilePosition[3] is the target point, and should be set to the input
@@ -68,7 +68,8 @@ int integrateProfile()
   // Integrates the profile and returns a new position setpoint for the controller
   unsigned int now = millis(); //what time is it?
   static unsigned int startTime = now;
-  if (integrateStart) {
+  if (integrateStart)
+  {
     startTime = now;
 //    Serial.println("Integrate Started: ");
 //    Serial.println(startTime);
@@ -78,15 +79,18 @@ int integrateProfile()
   unsigned int duration = now - startTime; //time since start of profile
 //  Serial.println(duration);
 
-  if (duration <= (profileTimes[1] - profileTimes[0])){
+  if (duration <= (profileTimes[1] - profileTimes[0]))
+  {
 //    Serial.println(profilePositions[0] + dir*accel*duration*duration/2);
     return profilePositions[0] + dir*accel*duration*duration/2; // distance [pulses]
   }
-  else if (duration <= (profileTimes[2] - profileTimes[0])){
+  else if (duration <= (profileTimes[2] - profileTimes[0]))
+  {
     if (!homed) return profilePositions[1] + dir*homeSpeed*(duration - profileTimes[1]); // distance [pulses]
     return profilePositions[1] + dir*maxSpeed*(duration - profileTimes[1]); // distance [pulses]
   }
-  else if (duration <= (profileTimes[3] - profileTimes[0])){
+  else if (duration <= (profileTimes[3] - profileTimes[0]))
+  {
     float topSpeed = accel * (profileTimes[1] - profileTimes[0]); // calculate the top speed in case != maxSpeed
     int deltaT = duration - profileTimes[2]; // calculate the time change from end of table top / triangle
     return profilePositions[2] + dir*(topSpeed*deltaT - accel*deltaT*deltaT/2); // distance [pulses]
@@ -94,6 +98,11 @@ int integrateProfile()
   else {
     return profilePositions[3]; //return the current position
   }
+}
+
+void stopProfile()
+{
+  // to do
 }
 
 void printProfile(){

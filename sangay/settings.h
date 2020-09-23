@@ -28,6 +28,7 @@ float pulseKp, pulseKi, pulseKd; // pulse conversion declarations
 const unsigned int sampleTime = 30; //sample time for derivative measurements [ms]
 const unsigned int debounceDelay = 50;  // the debounce time; increase if the output flickers
 const int error = 5; // error [pulses] allowable for position control. 5 pulses = 0.27 mm
+const int homeOffset = 20; // distance between limit and 0, positive. 20 pulses = 1.07 mm
 const unsigned int limitTime = 100; // time to move into the limit switch [ms]
 const int homeStep = 3; // distance to travel each homing step/loop
 const int lightPosition = 0.2 * stroke; // position to turn on lights [pulses]

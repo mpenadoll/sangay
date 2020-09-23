@@ -172,9 +172,10 @@ void moveTo(int setpoint)
 void loop()
 {
   updateSensors();
-  int target = 0; // finishing position of a profile
-  int setpoint = 0; // next step along a profile
-  bool homeFlag = false; // flag for setting 0 when hitting limit switch
+
+  static int target = 0; // finishing position of a profile
+  static int setpoint = 0; // next step along a profile
+  static bool homeFlag = false; // flag for setting 0 when hitting limit switch
 
   //if the position is greater than the lighting up position, turn on the LED strip
   //otherwise, turn it off
@@ -197,6 +198,16 @@ void loop()
       // set target as soon as possible
       // build a half triangle profile
       // moveto target
+      if (motorState != STOP)
+      {
+        stopProfile();
+        while (motorState != STOP)
+        {
+          setpoint = integrateProfile();
+          moveTo(setpoint);
+          updateSensors();
+        }
+      }
 
       if (go)
       { 
@@ -229,17 +240,24 @@ void loop()
       {
         if (!homeFlag)
         {
-          encoder.write(0);
-          setpoint = 0;
+          setpoint = currentPosition;
           homeFlag = true;
         }
-        moveTo(setpoint);
+        else setpoint++;
       }
-      else
+      else if (!homeFlag)
       {
         setpoint = integrateProfile();
-        moveTo(setpoint);
       }
+      else if (!homed)
+      {
+        encoder.write(-homeOffset);
+        setpoint = 0;
+        homed = true;
+        homeFlag = false;
+      }
+
+      moveTo(setpoint);
 
       if (motorState == STOP) go = false;
 
