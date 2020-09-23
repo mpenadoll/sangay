@@ -15,7 +15,7 @@ float buildProfile(int target)
   // set end point to target
   profilePositions[3] = target;
 
-  int topSpeed = maxSpeed; // set top speed to max speed, and change it later if necessary
+  float topSpeed = maxSpeed; // set top speed to max speed, and change it later if necessary
 
   // create honming specific profile
   if (!homed)
@@ -78,7 +78,7 @@ int integrateProfile(float topSpeed)
   if (integrateStart)
   {
     startTime = now;
-//    Serial.println("Integrate Started: ");
+    Serial.println("Integrate Started: ");
 //    Serial.println(startTime);
 //    Serial.print("DIR: ");
 //    Serial.println(dir);
@@ -119,7 +119,7 @@ float stopProfile()
   profilePositions[2] = profilePositions[1];
   profileTimes[2] = profileTimes[1];
 
-  int topSpeed = abs(currentSpeed);
+  float topSpeed = abs(currentSpeed);
 
   profilePositions[3] = profilePositions[2] + sgn(currentSpeed)*topSpeed*topSpeed/(2*accel);
   profileTimes[3] = profileTimes[2] + topSpeed/accel;

@@ -29,12 +29,12 @@ float computePID(int setpoint, int feedback){
   /*Compute PID Output (float math, but returns int)*/
   float output = pulseKp * error + pulseKi * errSum + pulseKd * dErr;
 
-//  if (debugPrint)
-//  {
-//    Serial.print("setpoint: ");
-//    Serial.println(setpoint);
-//    Serial.print("feedback: ");
-//    Serial.println(feedback);
+  if (debugPrint)
+  {
+    Serial.print("setpoint: ");
+    Serial.println(setpoint);
+    Serial.print("feedback: ");
+    Serial.println(feedback);
 //    Serial.print("error: ");
 //    Serial.println(error);
 //    Serial.print("errSum: ");
@@ -43,7 +43,7 @@ float computePID(int setpoint, int feedback){
 //    Serial.println(dErr);
 //    Serial.print("output: ");
 //    Serial.println(output);
-//  }
+  }
   
   return output;
 }

@@ -44,7 +44,6 @@ void setup() {
   // put your setup code here, to run once:
   setGains();
   encoder.write(0);
-  profilePositions[3] = -stroke;
   
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(limitSwitchPin, INPUT);
@@ -152,34 +151,24 @@ void updateSensors(){
     }
   }
   lastButtonState = reading; // save the reading. Next time through the loop, it'll be the lastButtonState
-
-  static unsigned int lastPrintTime = now;
-  if (now - lastPrintTime >= 1000)
-  {
-    debugPrint = true;
-    lastPrintTime = now;
-  }
 }
 
 void moveTo(int setpoint)
 {
-  if (abs(currentPosition - setpoint) < error && currentSpeed == 0)
-  {
-    motorDriver(0, currentSpeed);
-  }
-  else
-  {
-    float milliVolts = computePID(setpoint, currentPosition);
-    motorDriver(milliVolts, currentSpeed);
+//  if (abs(currentPosition - setpoint) < error && currentSpeed == 0)
+//  {
+//    motorDriver(0, currentSpeed);
+//  }
+  float milliVolts = computePID(setpoint, currentPosition);
+  motorDriver(milliVolts, currentSpeed);
 
-    if (debugPrint)
-    {
-      Serial.println(motorStateNames[motorState]);
-      Serial.print("mV: ");
-      Serial.println(milliVolts);
-      Serial.println("-------------------------");
-      debugPrint = false;
-    }
+  if (debugPrint)
+  {
+    Serial.println(motorStateNames[motorState]);
+    Serial.print("mV: ");
+    Serial.println(milliVolts);
+    Serial.println("-------------------------");
+    debugPrint = false;
   }
 }
 
@@ -202,6 +191,17 @@ void loop()
   else
   {
     digitalWrite(lightPin, LOW);
+  }
+
+  unsigned int now = millis();
+  static unsigned int lastPrintTime = now;
+  if (now - lastPrintTime >= 1000)
+  {
+    Serial.println(stateNames[state]);
+    Serial.println(motorStateNames[motorState]);
+    Serial.println("--------------------------");
+    debugPrint = true;
+    lastPrintTime = now;
   }
 
   // {STOPPED, HOMING, MOVING_UP, MOVING_DOWN}
@@ -232,6 +232,7 @@ void loop()
         {
           state = HOMING;
           target = -stroke;
+          dir = -1;
         }
         else if (dir == 1)
         {
@@ -246,11 +247,16 @@ void loop()
 
         integrateStart = true;
         topSpeed = buildProfile(target);
+        Serial.print("Top Speed: ");
+        Serial.println(topSpeed);
+        printProfile();
       }
 
       break;
     // -------------------------------
     case HOMING:
+
+//      Serial.println("Entering HOMING");
 
       // if limit switch, move up until not limit for set distance
       if (limitSwitch)
@@ -259,24 +265,27 @@ void loop()
         {
           setpoint = currentPosition;
           homeFlag = true;
+          Serial.println("homeFlag = true");
         }
         else setpoint++;
       }
       else if (!homeFlag)
       {
         setpoint = integrateProfile(topSpeed);
+//        Serial.println("profile integrated");
       }
-      else if (!homed)
+      else if (homeFlag)
       {
         encoder.write(-homeOffset);
         setpoint = 0;
         homed = true;
         homeFlag = false;
+        Serial.println("Homed = true");
       }
 
       moveTo(setpoint);
 
-      if (motorState == STOP) go = false;
+      if (motorState == STOP && homed) go = false;
 
       if (!go)
       {
@@ -291,7 +300,7 @@ void loop()
       setpoint = integrateProfile(topSpeed);
       moveTo(setpoint);
 
-      if (motorState == STOP) go = false;
+      if (motorState == STOP && abs(currentPosition - target) < error) go = false;
 
       if (!go)
       {
@@ -306,7 +315,7 @@ void loop()
       setpoint = integrateProfile(topSpeed);
       moveTo(setpoint);
 
-      if (motorState == STOP) go = false;
+      if (motorState == STOP && abs(currentPosition - target) < error) go = false;
 
       if (limitSwitch)
       {
