@@ -171,15 +171,15 @@ void moveTo(int setpoint)
   {
     float milliVolts = computePID(setpoint, currentPosition);
     motorDriver(milliVolts, currentSpeed);
-  }
-  
-  if (debugPrint)
-  {
-    Serial.println(motorStateNames[motorState]);
-    Serial.print("mV: ");
-    Serial.println(milliVolts);
-    Serial.println("-------------------------");
-    debugPrint = false;
+
+    if (debugPrint)
+    {
+      Serial.println(motorStateNames[motorState]);
+      Serial.print("mV: ");
+      Serial.println(milliVolts);
+      Serial.println("-------------------------");
+      debugPrint = false;
+    }
   }
 }
 
