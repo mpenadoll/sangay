@@ -3,7 +3,7 @@
  * when called, integrates along that profile and returns target setpoint
 */
 
-void buildProfile(int target)
+float buildProfile(int target)
 {
   // Function to calculate the position at times of the trapezoidal OR triangular profile
   // Note that profilePosition[3] is the target point, and should be set to the input
@@ -15,9 +15,13 @@ void buildProfile(int target)
   // set end point to target
   profilePositions[3] = target;
 
+  int topSpeed = maxSpeed; // set top speed to max speed, and change it later if necessary
+
   // create honming specific profile
   if (!homed)
   {
+    topSpeed = homeSpeed;
+
     profileTimes[1] = profileTimes[0] + homeAccelTime; //time at beginning of table top [ms]
     profilePositions[1] = profilePositions[0] - homeAccelDistance; //position at beginning of table top [pulses]
     // End of table top point t2 / x2
@@ -59,11 +63,14 @@ void buildProfile(int target)
     
       // End of profile at target t3 / x3
       profileTimes[3] = profileTimes[0]+ 2*(profileTimes[1]-profileTimes[0]); //time at the end of the profile [ms]
+
+      topSpeed = accel*(profileTimes[1] - profileTimes[0]);
     }
   }
+  return topSpeed;
 }
 
-int integrateProfile()
+int integrateProfile(float topSpeed)
 {
   // Integrates the profile and returns a new position setpoint for the controller
   unsigned int now = millis(); //what time is it?
@@ -86,12 +93,11 @@ int integrateProfile()
   }
   else if (duration <= (profileTimes[2] - profileTimes[0]))
   {
-    if (!homed) return profilePositions[1] + dir*homeSpeed*(duration - profileTimes[1]); // distance [pulses]
-    return profilePositions[1] + dir*maxSpeed*(duration - profileTimes[1]); // distance [pulses]
+    return profilePositions[1] + dir*topSpeed*(duration - profileTimes[1]); // distance [pulses]
   }
   else if (duration <= (profileTimes[3] - profileTimes[0]))
   {
-    float topSpeed = accel * (profileTimes[1] - profileTimes[0]); // calculate the top speed in case != maxSpeed
+    // float topSpeed = accel * (profileTimes[1] - profileTimes[0]); // calculate the top speed in case != maxSpeed
     int deltaT = duration - profileTimes[2]; // calculate the time change from end of table top / triangle
     return profilePositions[2] + dir*(topSpeed*deltaT - accel*deltaT*deltaT/2); // distance [pulses]
   }
@@ -100,9 +106,25 @@ int integrateProfile()
   }
 }
 
-void stopProfile()
+float stopProfile()
 {
-  // to do
+  // starting point t0, x0
+  profileTimes[0] = 0; //set t0 to time 0 [ms]
+  profilePositions[0] = currentPosition; //set x0 to current position [pulses]
+
+  // set point 1 and 2 equal to point 0
+  profilePositions[1] = profilePositions[0];
+  profileTimes[1] = profileTimes[0];
+
+  profilePositions[2] = profilePositions[1];
+  profileTimes[2] = profileTimes[1];
+
+  int topSpeed = abs(currentSpeed);
+
+  profilePositions[3] = profilePositions[2] + sgn(currentSpeed)*topSpeed*topSpeed/(2*accel);
+  profileTimes[3] = profileTimes[2] + topSpeed/accel;
+  
+  return topSpeed;
 }
 
 void printProfile(){

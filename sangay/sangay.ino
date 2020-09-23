@@ -176,6 +176,7 @@ void loop()
   static int target = 0; // finishing position of a profile
   static int setpoint = 0; // next step along a profile
   static bool homeFlag = false; // flag for setting 0 when hitting limit switch
+  static float topSpeed = 0; // speed to transfer from profile builder to integrator
 
   //if the position is greater than the lighting up position, turn on the LED strip
   //otherwise, turn it off
@@ -200,10 +201,11 @@ void loop()
       // moveto target
       if (motorState != STOP)
       {
-        stopProfile();
+        integrateStart = true;
+        topSpeed = stopProfile();
         while (motorState != STOP)
         {
-          setpoint = integrateProfile();
+          setpoint = integrateProfile(topSpeed);
           moveTo(setpoint);
           updateSensors();
         }
@@ -228,7 +230,7 @@ void loop()
         }
 
         integrateStart = true;
-        buildProfile(target);
+        topSpeed = buildProfile(target);
       }
 
       break;
@@ -247,7 +249,7 @@ void loop()
       }
       else if (!homeFlag)
       {
-        setpoint = integrateProfile();
+        setpoint = integrateProfile(topSpeed);
       }
       else if (!homed)
       {
@@ -271,7 +273,7 @@ void loop()
     // -------------------------------
     case MOVING_UP:
 
-      setpoint = integrateProfile();
+      setpoint = integrateProfile(topSpeed);
       moveTo(setpoint);
 
       if (motorState == STOP) go = false;
@@ -286,7 +288,7 @@ void loop()
     // -------------------------------
     case MOVING_DOWN:
 
-      setpoint = integrateProfile();
+      setpoint = integrateProfile(topSpeed);
       moveTo(setpoint);
 
       if (motorState == STOP) go = false;
