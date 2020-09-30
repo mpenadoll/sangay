@@ -38,7 +38,8 @@ String stateNames[4] = {"STOPPED", "HOMING", "MOVING_UP", "MOVING_DOWN"}; // nam
 // Initialize Encoder
 Encoder encoder(encoderApin, encoderBpin);
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
   
   // put your setup code here, to run once:
@@ -105,7 +106,8 @@ void setup() {
   Serial.println("READY");
 }
 
-void updateSensors(){
+void updateSensors()
+{
   // update button and limit switches
   int reading = digitalRead(buttonPin);  // read the state of the switch into a local variable
   limitSwitch = digitalRead(limitSwitchPin);
@@ -140,11 +142,13 @@ void updateSensors(){
   // reset the debouncing timer if reading has changed
   if (reading != lastButtonState) lastDebounceTime = now;
 
-  if ((now - lastDebounceTime) > debounceDelay && reading != buttonState) {
+  if ((now - lastDebounceTime) > debounceDelay && reading != buttonState)
+  {
     // whatever the reading is at, it's been there for longer than the debounce
     // delay, and the button state has changed
     buttonState = reading;
-    if (buttonState == LOW) {
+    if (buttonState == LOW)
+    {
       go = !go;       // change system state to go
       Serial.print("GO: ");
       Serial.println(go);

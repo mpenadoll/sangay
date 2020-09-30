@@ -3,7 +3,8 @@
  * converts the gains to the appropriate units
  */
 
-float computePID(int setpoint, int feedback){
+float computePID(int setpoint, int feedback)
+{
   
   unsigned int now = millis();
 
@@ -49,7 +50,8 @@ float computePID(int setpoint, int feedback){
 }
 
 // Convert the gains to the correct units
-void setGains(){  
+void setGains()
+{  
   pulseKp = Kp * 3.14 * pulleyRadius / PPR; //proportional gain [mV / pulse]
   pulseKi = Ki * 3.14 * pulleyRadius / (PPR * 1000.0); //integral gain [mV / (pulse * ms)]
   pulseKd = Kd * 3.14 * pulleyRadius * 1000.0 / PPR; //derivative gain [mV * ms / pulse]

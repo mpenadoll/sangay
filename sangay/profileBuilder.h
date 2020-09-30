@@ -127,7 +127,8 @@ float stopProfile()
   return topSpeed;
 }
 
-void printProfile(){
+void printProfile()
+{
   Serial.print("Profile Positions [0]: ");
   Serial.print(profilePositions[0]);
   Serial.println();
