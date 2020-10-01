@@ -317,7 +317,7 @@ void loop()
       setpoint = integrateProfile(topSpeed);
       moveTo(setpoint);
 
-      if (motorState == STOP && abs(currentPosition - target) < error) go = false;
+      if (motorState == STOP && abs(currentPosition - target) <= maxError) go = false;
 
       if (!go)
       {
@@ -333,7 +333,7 @@ void loop()
       setpoint = integrateProfile(topSpeed);
       moveTo(setpoint);
 
-      if (motorState == STOP && abs(currentPosition - target) < error) go = false;
+      if (motorState == STOP && abs(currentPosition - target) <= maxError) go = false;
 
       if (limitSwitch)
       {
