@@ -5,7 +5,7 @@
 
 // VARIABLES
 bool go = false; // the state of the drive system (go or stop)
-bool homed = false;  // has the stepper been properly homed
+bool homed = true;  // has the stepper been properly homed
 int limitSwitch = LOW;  // the state of the limit switch
 int8_t dir = 1; //the current state direction of the drive system (up is HIGH)
 int8_t lastDir = 1; //the last direction of the system, to check if it switched
@@ -40,7 +40,7 @@ Encoder encoder(encoderApin, encoderBpin);
 
 void setup()
 {
-//  Serial.begin(9600);
+  Serial.begin(9600);
   
   // put your setup code here, to run once:
   setGains();
@@ -157,7 +157,7 @@ void updateSensors()
   lastButtonState = reading; // save the reading. Next time through the loop, it'll be the lastButtonState
 }
 
-void moveTo(long setpoint)
+void moveTo(long setpoint, long target)
 {
   static int milliVolts = 0;
   unsigned int now = millis();
@@ -165,18 +165,18 @@ void moveTo(long setpoint)
   if (now - lastTime >= sampleTime)
   {
     milliVolts = computePID(setpoint, currentPosition);
-    motorDriver(milliVolts, setpoint - currentPosition);
+    motorDriver(milliVolts, target - currentPosition);
     lastTime = now;
   }
 
-  if (debugPrint)
-  {
-    Serial.print("mV: ");
-    Serial.println(milliVolts);
-    Serial.println(motorStateNames[motorState]);
-    Serial.println("-------------------------");
-    debugPrint = false;
-  }
+//  if (debugPrint)
+//  {
+//    Serial.print("mV: ");
+//    Serial.println(milliVolts);
+//    Serial.println(motorStateNames[motorState]);
+//    Serial.println("-------------------------");
+//    debugPrint = false;
+//  }
 }
 
 
@@ -224,22 +224,24 @@ void loop()
       // set target as soon as possible
       // build a half triangle profile
       // moveto target
-      if (motorState != STOP)
+      if (motorState != BRAKE)
       {
         integrateStart = true;
         topSpeed = stopProfile();
+        target = profilePositions[3];
         printProfile();
         Serial.print("current pos: ");
         Serial.println(currentPosition);
         Serial.print("current speed: ");
         Serial.println(currentSpeed);
-        while (motorState != STOP)
+        while (motorState != BRAKE)
         {
           setpoint = integrateProfile(topSpeed);
-          moveTo(setpoint);
+          moveTo(setpoint, target);
           updateSensors();
         }
       }
+      else moveTo(setpoint, target);
 
       if (go)
       { 
@@ -299,9 +301,9 @@ void loop()
         Serial.println("Homed = true");
       }
 
-      moveTo(setpoint);
+      moveTo(setpoint, target);
 
-      if (motorState == STOP && homed) go = false;
+      if (motorState == BRAKE && homed) go = false;
 
       if (!go)
       {
@@ -315,15 +317,17 @@ void loop()
     case MOVING_UP:
 
       setpoint = integrateProfile(topSpeed);
-      moveTo(setpoint);
+      moveTo(setpoint, target);
 
-      if (motorState == STOP && abs(currentPosition - target) <= maxError) go = false;
+      if (motorState == BRAKE && abs(currentPosition - target) <= maxError) go = false;
 
       if (!go)
       {
         dir = -dir;
         state = STOPPED;
         Serial.println(stateNames[state]);
+        Serial.print("GO: ");
+        Serial.println(go);
       }
 
       break;
@@ -331,9 +335,9 @@ void loop()
     case MOVING_DOWN:
 
       setpoint = integrateProfile(topSpeed);
-      moveTo(setpoint);
+      moveTo(setpoint, target);
 
-      if (motorState == STOP && abs(currentPosition - target) <= maxError) go = false;
+      if (motorState == BRAKE && abs(currentPosition - target) <= maxError) go = false;
 
       if (limitSwitch)
       {

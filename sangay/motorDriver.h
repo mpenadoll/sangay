@@ -9,9 +9,9 @@ inputs:
 */
 
 // FSM STATES
-enum motorState_enum {STOP, PWR_MOVE, DEGEN}; //declare the states as an enum
-motorState_enum motorState = STOP; // create the state variable of type state_enum
-String motorStateNames[3] = {"STOP", "PWR_MOVE", "DEGEN"}; // names of states for printing
+enum motorState_enum {BRAKE, PWR_MOVE, DEGEN}; //declare the states as an enum
+motorState_enum motorState = BRAKE; // create the state variable of type state_enum
+String motorStateNames[3] = {"BRAKE", "PWR_MOVE", "DEGEN"}; // names of states for printing
 
 void motorDriver (int milliVolts, long error)
 {
@@ -22,19 +22,18 @@ void motorDriver (int milliVolts, long error)
   if (debugPrint)
   {
     Serial.print("constrained mV: ");
-    Serial.println(milliVolts,5);
+    Serial.println(milliVolts);
     Serial.print("mapped mV: ");
     Serial.println(map(abs(milliVolts),0,supplyVoltage,minPWM,255));
     Serial.print("motor speed: ");
     Serial.println(currentSpeed,5);
-    Serial.println(motorStateNames[motorState]);
     debugPrint = false;
   }
 
   switch (motorState)
   {
     // -------------------------------
-    case STOP:
+    case BRAKE:
 
       analogWrite(PWMpin, 0); //set PWM for motor driver
       analogWrite(degenPWMpin, 255); //set degen PWM for resistors
@@ -43,6 +42,7 @@ void motorDriver (int milliVolts, long error)
       if (error > maxError)
       {
         motorState = PWR_MOVE;
+        Serial.println(motorStateNames[motorState]);
       }
     
       break;
@@ -60,7 +60,11 @@ void motorDriver (int milliVolts, long error)
         analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,minPWM,255)); //set PWM for motor driver
       }
       
-      if (error <= maxError && currentSpeed <= minSpeed) motorState = STOP;
+      if (error <= maxError && currentSpeed <= minSpeed)
+      {
+        motorState = BRAKE;
+        Serial.println(motorStateNames[motorState]);
+      }
 
       break;
     // -------------------------------
@@ -70,12 +74,16 @@ void motorDriver (int milliVolts, long error)
       analogWrite(PWMpin, 0); //set PWM for motor driver
       analogWrite(degenPWMpin, map(abs(milliVolts),0,supplyVoltage,0,255)); //set degen PWM for resistors
 
-      if (sgn(milliVolts) == sgn(currentSpeed) || currentSpeed < minDegenSpeed) motorState = PWR_MOVE;
+      if (sgn(milliVolts) == sgn(currentSpeed) || currentSpeed < minDegenSpeed)
+      {
+        motorState = PWR_MOVE;
+        Serial.println(motorStateNames[motorState]);
+      }
 
       break;
     // -------------------------------
     default:
-      motorState = STOP;
+      motorState = BRAKE;
       break;
     // -------------------------------
   }

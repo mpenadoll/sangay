@@ -5,7 +5,7 @@
 float strokeMM = 5000.0; //* stroke [mm] 431.8
 float pulleyRadius = 24.41; // radius of the pulley [mm]
 float maxSpeedMM = 500.0; //* max speed of rack [mm/s]
-float homeSpeedMM = 20.0; //* homing speed [mm/s]
+float homeSpeedMM = 500.0; //* homing speed [mm/s]
 float accelMM = 100.0; //* acceleration of rack [mm/s^2]
 float PPR = 1440.0; // number of pulses of encoder per rev
 
@@ -21,7 +21,7 @@ float homeAccelDistance = 0.5 * accel * homeAccelTime * homeAccelTime;
 
 // Set PID Controller Settings for Position Control
 float Kp = 1000.0; //* proportional gain [V / m]
-float Ki = 100.0; //* integral gain [V / (m*s)]
+float Ki = 0.0; //* integral gain [V / (m*s)]
 float Kd = 0.0; //* derivative gain [V * s / m]
 float pulseKp, pulseKi, pulseKd; // pulse conversion declarations
 
@@ -34,7 +34,7 @@ const long lightPosition = 0.2 * stroke; // position to turn on lights [pulses]
 const int supplyVoltage = 24000; // system voltage
 const float minDegenSpeed = 1; // minimum speed that degen is effective [pulses / ms]
 const int minPWM = 255 * 1 / 24; // minimum PWM value that motor will move [analog]
-const float minSpeed = 0.001; // minimum speed at which the brake can be applied [pulses / ms]
+const float minSpeed = 0.0001; // minimum speed at which the brake can be applied [pulses / ms]
 const int stopFudge = 100; //* fudge factor for stopping [pulses]
 
 // PINS
