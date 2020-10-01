@@ -184,8 +184,8 @@ void loop()
 {
   updateSensors();
 
-  static int target = 0; // finishing position of a profile
-  static int setpoint = 0; // next step along a profile
+  static long target = 0; // finishing position of a profile
+  static long setpoint = 0; // next step along a profile
   static bool homeFlag = false; // flag for setting 0 when hitting limit switch
   static float topSpeed = 0; // speed to transfer from profile builder to integrator
 
@@ -204,10 +204,12 @@ void loop()
   static unsigned int lastPrintTime = now;
   if (now - lastPrintTime >= 1000)
   {
-//    Serial.println(stateNames[state]);
-//    Serial.println(motorStateNames[motorState]);
-    Serial.println("--------------------------");
-//    Serial.println(currentPosition);
+    Serial.print("setpoint: ");
+    Serial.println(setpoint);
+    Serial.print("current pos: ");
+    Serial.println(currentPosition);
+    Serial.print("current speed: ");
+    Serial.println(currentSpeed);
     debugPrint = true;
     lastPrintTime = now;
   }
@@ -226,6 +228,11 @@ void loop()
       {
         integrateStart = true;
         topSpeed = stopProfile();
+        printProfile();
+        Serial.print("current pos: ");
+        Serial.println(currentPosition);
+        Serial.print("current speed: ");
+        Serial.println(currentSpeed);
         while (motorState != STOP)
         {
           setpoint = integrateProfile(topSpeed);
