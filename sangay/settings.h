@@ -3,9 +3,9 @@
 // Motion Profile Variables
 float strokeMM = 500.0;     // stroke [mm] 431.8
 float pulleyRadius = 24.41;  // radius of the pulley [mm]
-float maxSpeedMM = 80.0;     // max speed of rack [mm/s]
-float homeSpeedMM = 30.0; // homing speed [mm/s]
-float accelMM = 150.0;        // acceleration of rack [mm/s^2]
+float maxSpeedMM = 10.0;     // max speed of rack [mm/s]
+float homeSpeedMM = 10.0; // homing speed [mm/s]
+float accelMM = 1.0;        // acceleration of rack [mm/s^2]
 float PPR = 1440.0;  // number of pulses of encoder per rev
 
 // Calculate variables in units of enconder pulses. Note - gear ratio was removed
@@ -19,7 +19,7 @@ float accelDistance = 0.5 * accel * accelTime * accelTime; //the minimum distanc
 float homeAccelDistance = 0.5 * accel * homeAccelTime * homeAccelTime;
 
 // Set PID Controller Settings for Position Control
-float Kp = 7800.0; // proportional gain [V / m]
+float Kp = 10.0; // proportional gain [V / m]
 float Ki = 0.0; // integral gain [V / (m*s)]
 float Kd = 0.0; // derivative gain [V * s / m]
 float pulseKp, pulseKi, pulseKd; // pulse conversion declarations
@@ -34,7 +34,7 @@ const int homeStep = 3; // distance to travel each homing step/loop
 const int lightPosition = 0.2 * stroke; // position to turn on lights [pulses]
 const int supplyVoltage = 24000; //system voltage
 const float minDegenSpeed = 1; //minimum speed that degen is effective [pulses / ms]
-const int minPWM = 255 * 1 / 24; // minimum PWM value that motor will move [analog]
+const int minPWM = 0;//255 * 1 / 24; // minimum PWM value that motor will move [analog]
 
 // PINS
 const int dirPin = 4;  //pin to enable (high) driver
@@ -48,7 +48,8 @@ const int brakePin = 9; //pin for the motor brake MOSFET
 const int degenPWMpin = 11; //pin to set the PWM on the degen power resistors
 
 // SUPPORTING FUNCTIONS
-static inline int8_t sgn(float val) {
+static inline int8_t sgn(float val)
+{
  if (val < 0) return -1;
  if (val==0) return 0;
  return 1;

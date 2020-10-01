@@ -32,6 +32,7 @@ float computePID(int setpoint, int feedback)
 
   if (debugPrint)
   {
+    debugPrint = false;
     Serial.print("setpoint: ");
     Serial.println(setpoint);
     Serial.print("feedback: ");
@@ -42,8 +43,8 @@ float computePID(int setpoint, int feedback)
 //    Serial.println(errSum);
 //    Serial.print("dErr: ");
 //    Serial.println(dErr);
-//    Serial.print("output: ");
-//    Serial.println(output);
+    Serial.print("output (mV): ");
+    Serial.println(output);
   }
   
   return output;

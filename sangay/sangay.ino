@@ -166,14 +166,14 @@ void moveTo(int setpoint)
   float milliVolts = computePID(setpoint, currentPosition);
   motorDriver(milliVolts, currentSpeed);
 
-  if (debugPrint)
-  {
-    Serial.println(motorStateNames[motorState]);
-    Serial.print("mV: ");
-    Serial.println(milliVolts);
-    Serial.println("-------------------------");
-    debugPrint = false;
-  }
+//  if (debugPrint)
+//  {
+//    Serial.println(motorStateNames[motorState]);
+//    Serial.print("mV: ");
+//    Serial.println(milliVolts);
+//    Serial.println("-------------------------");
+//    debugPrint = false;
+//  }
 }
 
 
@@ -201,9 +201,10 @@ void loop()
   static unsigned int lastPrintTime = now;
   if (now - lastPrintTime >= 1000)
   {
-    Serial.println(stateNames[state]);
-    Serial.println(motorStateNames[motorState]);
+//    Serial.println(stateNames[state]);
+//    Serial.println(motorStateNames[motorState]);
     Serial.println("--------------------------");
+//    Serial.println(currentPosition);
     debugPrint = true;
     lastPrintTime = now;
   }
@@ -251,6 +252,7 @@ void loop()
 
         integrateStart = true;
         topSpeed = buildProfile(target);
+        Serial.println(stateNames[state]);
         Serial.print("Top Speed: ");
         Serial.println(topSpeed);
         printProfile();
@@ -295,6 +297,7 @@ void loop()
       {
         dir = 1;
         state = STOPPED;
+        Serial.println(stateNames[state]);
       }
 
       break;
@@ -310,6 +313,7 @@ void loop()
       {
         dir = -dir;
         state = STOPPED;
+        Serial.println(stateNames[state]);
       }
 
       break;
@@ -331,6 +335,7 @@ void loop()
       {
         dir = -dir;
         state = STOPPED;
+        Serial.println(stateNames[state]);
       }
 
       break;
