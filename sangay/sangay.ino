@@ -10,7 +10,7 @@ int limitSwitch = LOW;  // the state of the limit switch
 int8_t dir = 1; //the current state direction of the drive system (up is HIGH)
 int8_t lastDir = 1; //the last direction of the system, to check if it switched
 int buttonState = HIGH; // the current reading from the input pin
-int currentPosition; //the current position [pulses]
+long currentPosition; //the current position [pulses]
 
 float currentSpeed; //the current speed (average) [pulses / ms]
 const int numReadings = 4; //number of readings for speed moving average
@@ -18,7 +18,7 @@ int readIndex; //index to update the readings
 float speedReadings[numReadings]; // array for speed moving average
 float speedTotal; // sum of speed readings
 
-int profilePositions[4]; //{x0, x1, x2, x3} x0 is the start position, and x3 is the end position [pulses]
+long profilePositions[4]; //{x0, x1, x2, x3} x0 is the start position, and x3 is the end position [pulses]
 unsigned int profileTimes[4]; //{t0, t1, t2, t3} t0 is the start time, and t3 is the end time [ms]
 bool integrateStart = true; // initializes the start of an integration profile
 bool debugPrint = false;
@@ -40,7 +40,7 @@ Encoder encoder(encoderApin, encoderBpin);
 
 void setup()
 {
-  Serial.begin(9600);
+//  Serial.begin(9600);
   
   // put your setup code here, to run once:
   setGains();
@@ -117,8 +117,8 @@ void updateSensors()
   static unsigned int lastTime = now - sampleTime;
 
   // read encoder and calculate the speed
-  int newPosition = encoder.read();
-  static int lastPosition = newPosition;
+  long newPosition = encoder.read();
+  static long lastPosition = newPosition;
   // only calculate the speed if time elapsed has been more than set sample time
   if (now - lastTime >= sampleTime)
   {
@@ -157,23 +157,26 @@ void updateSensors()
   lastButtonState = reading; // save the reading. Next time through the loop, it'll be the lastButtonState
 }
 
-void moveTo(int setpoint)
+void moveTo(long setpoint)
 {
-//  if (abs(currentPosition - setpoint) < error && currentSpeed == 0)
-//  {
-//    motorDriver(0, currentSpeed);
-//  }
-  float milliVolts = computePID(setpoint, currentPosition);
-  motorDriver(milliVolts, currentSpeed);
+  static int milliVolts = 0;
+  unsigned int now = millis();
+  static unsigned int lastTime = now - sampleTime;
+  if (now - lastTime >= sampleTime)
+  {
+    milliVolts = computePID(setpoint, currentPosition);
+    motorDriver(milliVolts, setpoint - currentPosition);
+    lastTime = now;
+  }
 
-//  if (debugPrint)
-//  {
-//    Serial.println(motorStateNames[motorState]);
-//    Serial.print("mV: ");
-//    Serial.println(milliVolts);
-//    Serial.println("-------------------------");
-//    debugPrint = false;
-//  }
+  if (debugPrint)
+  {
+    Serial.print("mV: ");
+    Serial.println(milliVolts);
+    Serial.println(motorStateNames[motorState]);
+    Serial.println("-------------------------");
+    debugPrint = false;
+  }
 }
 
 

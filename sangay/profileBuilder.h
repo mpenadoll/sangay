@@ -3,7 +3,7 @@
  * when called, integrates along that profile and returns target setpoint
 */
 
-float buildProfile(int target)
+float buildProfile(long target)
 {
   // Function to calculate the position at times of the trapezoidal OR triangular profile
   // Note that profilePosition[3] is the target point, and should be set to the input
@@ -34,7 +34,7 @@ float buildProfile(int target)
   else
   {
 
-    int distance = profilePositions[3] - profilePositions[0]; //distance to travel for profile [pulses]
+    long distance = profilePositions[3] - profilePositions[0]; //distance to travel for profile [pulses]
     
     // Trapezoidal Profile Calculations
     if (abs(distance) >= 2*accelDistance)
@@ -70,7 +70,7 @@ float buildProfile(int target)
   return topSpeed;
 }
 
-int integrateProfile(float topSpeed)
+long integrateProfile(float topSpeed)
 {
   // Integrates the profile and returns a new position setpoint for the controller
   unsigned int now = millis(); //what time is it?
@@ -78,7 +78,8 @@ int integrateProfile(float topSpeed)
   if (integrateStart)
   {
     startTime = now;
-    Serial.println("Integrate Started: ");
+    Serial.println("Integrate Started");
+    integrateStart = false;
 //    Serial.println(startTime);
 //    Serial.print("DIR: ");
 //    Serial.println(dir);
@@ -110,7 +111,7 @@ float stopProfile()
 {
   // starting point t0, x0
   profileTimes[0] = 0; //set t0 to time 0 [ms]
-  profilePositions[0] = currentPosition; //set x0 to current position [pulses]
+  profilePositions[0] = currentPosition + stopFudge; //set x0 to current position [pulses]
 
   // set point 1 and 2 equal to point 0
   profilePositions[1] = profilePositions[0];
