@@ -5,19 +5,15 @@
 float strokeMM = 5000.0; //* stroke [mm] 431.8
 float pulleyRadius = 24.41; // radius of the pulley [mm]
 float maxSpeedMM = 500.0; //* max speed of rack [mm/s]
-float homeSpeedMM = 500.0; //* homing speed [mm/s]
 float accelMM = 200.0; //* acceleration of rack [mm/s^2]
 float PPR = 1440.0; // number of pulses of encoder per rev
 
-// Calculate variables in units of enconder pulses. Note - gear ratio was removed
+// convert to [pulse] units. Note - gear ratio not included because encoder is on output shaft
 float stroke = PPR * 2 * strokeMM / (pulleyRadius * 2 * 3.14);  // stroke [pulses]
 float maxSpeed = PPR * 2 * maxSpeedMM / (pulleyRadius * 2 * 3.14 * 1000); // max speed [pulses/ms]
-float homeSpeed = PPR * 2 * homeSpeedMM / (pulleyRadius * 2 * 3.14 * 1000); // max speed [pulses/ms]
+float homeSpeed = 0.5 * maxSpeed;
+float limitSpeed = 0.1 * maxSpeed;
 float accel = PPR * 2 * accelMM / (pulleyRadius * 2 * 3.14 * 1000 * 1000);  // acceleration [pulses/ms^2]
-float accelTime = maxSpeed / accel; //time to accelerate and decelerate from stop [ms]
-float homeAccelTime = homeSpeed / accel;
-float accelDistance = 0.5 * accel * accelTime * accelTime; //the minimum distance to accelerate to max speed [pulses]
-float homeAccelDistance = 0.5 * accel * homeAccelTime * homeAccelTime;
 
 // Set PID Controller Settings for Position Control
 float Kp = 1000.0; //* proportional gain [V / m]

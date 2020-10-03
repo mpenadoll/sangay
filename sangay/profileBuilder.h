@@ -1,9 +1,14 @@
 /* Profile Builder
  * builds a trapezoidal or triangular profile
  * when called, integrates along that profile and returns target setpoint
+ * inputs:
+ * 1. target, end position of the profile [pulses]
+ * 2. speed, expected top speed of the profile [pulses/ms]
+ * output:
+ * 1. topSpeed, top speed of the profile in case expected "speed" not reached [pulses/ms]
 */
 
-float buildProfile(long target)
+float buildProfile(long target, float speed)
 {
   // Function to calculate the position at times of the trapezoidal OR triangular profile
   // Note that profilePosition[3] is the target point, and should be set to the input
@@ -15,57 +20,40 @@ float buildProfile(long target)
   // set end point to target
   profilePositions[3] = target;
 
-  float topSpeed = maxSpeed; // set top speed to max speed, and change it later if necessary
-
-  // create honming specific profile
-  if (!homed)
+  float topSpeed = speed; // set top speed to max speed, and change it later if necessary
+  float accelTime = speed / accel; //time to accelerate and decelerate from stop [ms]
+  float accelDistance = 0.5 * accel * accelTime * accelTime; //the minimum distance to accelerate to max speed [pulses]
+  long distance = profilePositions[3] - profilePositions[0]; //distance to travel for profile [pulses]
+  
+  // Trapezoidal Profile Calculations
+  if (abs(distance) >= 2*accelDistance)
   {
-    topSpeed = homeSpeed;
-
-    profileTimes[1] = profileTimes[0] + homeAccelTime; //time at beginning of table top [ms]
-    profilePositions[1] = profilePositions[0] - homeAccelDistance; //position at beginning of table top [pulses]
+    // End of Acceleration Point t1 / x1
+    profileTimes[1] = profileTimes[0] + accelTime; //time at beginning of table top [ms]
+    profilePositions[1] = profilePositions[0] + sgn(distance)*accelDistance; //position at beginning of table top [pulses]
+  
     // End of table top point t2 / x2
-    profilePositions[2] = profilePositions[3] + homeAccelDistance; //position at end of table top [pulses]
-    profileTimes[2] = profileTimes[1] + abs(profilePositions[2] - profilePositions[1]) / homeSpeed; //time at end of table top [ms]
+    profilePositions[2] = profilePositions[3] - sgn(distance)*accelDistance; //position at end of table top [pulses]
+    profileTimes[2] = profileTimes[1] + abs(profilePositions[2] - profilePositions[1]) / speed; //time at end of table top [ms]
+  
     // End of profile at target t3 / x3
-    profileTimes[3] = profileTimes[2] + homeAccelTime; //time at the end of the profile [ms]
+    profileTimes[3] = profileTimes[2] + accelTime; //time at the end of the profile [ms]
   }
-
+  // Triangular Profile Calculations
   else
   {
+    // End of Acceleration Point t1 / x1
+    profilePositions[1] = profilePositions[0] + sgn(distance)*distance/2; //position at top of triangle [pulses]
+    profileTimes[1] = profileTimes[0] + sqrt(abs(distance)/accel); //time at top of triangle [ms]
+    
+    // Position at the top is also t2 / x2
+    profilePositions[2] = profilePositions[1]; //position at end of table top [pulses]
+    profileTimes[2] = profileTimes[1]; //time at end of table top [ms]
+  
+    // End of profile at target t3 / x3
+    profileTimes[3] = profileTimes[0]+ 2*(profileTimes[1]-profileTimes[0]); //time at the end of the profile [ms]
 
-    long distance = profilePositions[3] - profilePositions[0]; //distance to travel for profile [pulses]
-    
-    // Trapezoidal Profile Calculations
-    if (abs(distance) >= 2*accelDistance)
-    {
-      // End of Acceleration Point t1 / x1
-      profileTimes[1] = profileTimes[0] + accelTime; //time at beginning of table top [ms]
-      profilePositions[1] = profilePositions[0] + sgn(distance)*accelDistance; //position at beginning of table top [pulses]
-    
-      // End of table top point t2 / x2
-      profilePositions[2] = profilePositions[3] - sgn(distance)*accelDistance; //position at end of table top [pulses]
-      profileTimes[2] = profileTimes[1] + abs(profilePositions[2] - profilePositions[1]) / maxSpeed; //time at end of table top [ms]
-    
-      // End of profile at target t3 / x3
-      profileTimes[3] = profileTimes[2] + accelTime; //time at the end of the profile [ms]
-    }
-    // Triangular Profile Calculations
-    else
-    {
-      // End of Acceleration Point t1 / x1
-      profilePositions[1] = profilePositions[0] + sgn(distance)*distance/2; //position at top of triangle [pulses]
-      profileTimes[1] = profileTimes[0] + sqrt(abs(distance)/accel); //time at top of triangle [ms]
-      
-      // Position at the top is also t2 / x2
-      profilePositions[2] = profilePositions[1]; //position at end of table top [pulses]
-      profileTimes[2] = profileTimes[1]; //time at end of table top [ms]
-    
-      // End of profile at target t3 / x3
-      profileTimes[3] = profileTimes[0]+ 2*(profileTimes[1]-profileTimes[0]); //time at the end of the profile [ms]
-
-      topSpeed = accel*(profileTimes[1] - profileTimes[0]);
-    }
+    topSpeed = accel*(profileTimes[1] - profileTimes[0]);
   }
   return topSpeed;
 }
@@ -100,7 +88,7 @@ long integrateProfile(float topSpeed)
   }
   else if (duration <= (profileTimes[3] - profileTimes[0]))
   {
-    // float topSpeed = accel * (profileTimes[1] - profileTimes[0]); // calculate the top speed in case != maxSpeed
+    // float topSpeed = accel * (profileTimes[1] - profileTimes[0]); // calculate the top speed in case != speed
     int deltaT = duration - profileTimes[2]; // calculate the time change from end of table top / triangle
     return profilePositions[2] + dir*(topSpeed*deltaT - accel*deltaT*deltaT/2); // distance [pulses]
   }
