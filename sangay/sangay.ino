@@ -40,7 +40,7 @@ Encoder encoder(encoderApin, encoderBpin);
 
 void setup()
 {
-  Serial.begin(9600);
+//  Serial.begin(9600);
   
   // put your setup code here, to run once:
   setGains();
@@ -232,31 +232,11 @@ void loop()
         integrateStart = true;
         topSpeed = stopProfile();
         target = profilePositions[3];
-        printProfile();
-        Serial.print("target: ");
-        Serial.println(target);
-        Serial.print("current pos: ");
-        Serial.println(currentPosition);
-        Serial.print("current speed: ");
-        Serial.println(currentSpeed);
         while (motorState != BRAKE)
         {
           setpoint = integrateProfile(topSpeed);
           moveTo(setpoint, target);
           updateSensors();
-
-//          now = millis();
-//          if (now - lastPrintTime >= 1000)
-//          {
-//            Serial.print("setpoint: ");
-//            Serial.println(setpoint);
-//            Serial.print("current pos: ");
-//            Serial.println(currentPosition);
-//            Serial.print("current speed: ");
-//            Serial.println(currentSpeed);
-//            debugPrint = true;
-//            lastPrintTime = now;
-//          }
         }
       }
       else moveTo(setpoint, target);

@@ -113,7 +113,7 @@ float stopProfile()
 {
   // starting point t0, x0
   profileTimes[0] = 0; //set t0 to time 0 [ms]
-  profilePositions[0] = currentPosition + stopFudge; //set x0 to current position [pulses]
+  profilePositions[0] = currentPosition + sgn(currentSpeed)*stopFudge; //set x0 to current position [pulses]
 
   // set point 1 and 2 equal to point 0
   profilePositions[1] = profilePositions[0];

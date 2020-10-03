@@ -35,7 +35,7 @@ const long supplyVoltage = 24000; // system voltage, long due to wrapping of mil
 const float minDegenSpeed = 1; // minimum speed that degen is effective [pulses / ms]
 const int minPWM = 255 * 1.05 / 24; // minimum PWM value that motor will move [analog]
 const float minSpeed = 0.0001; // minimum speed at which the brake can be applied [pulses / ms]
-const int stopFudge = 100; //* fudge factor for stopping [pulses]
+const int stopFudge = 200; //* fudge factor for stopping [pulses]
 
 // PINS
 const int dirPin = 4;  //pin to enable (high) driver
