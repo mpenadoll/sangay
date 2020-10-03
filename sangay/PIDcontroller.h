@@ -3,7 +3,7 @@
  * converts the gains to the appropriate units
  */
 
-int computePID(long setpoint, long feedback)
+long computePID(long setpoint, long feedback)
 {
   
   unsigned int now = millis();
@@ -28,7 +28,7 @@ int computePID(long setpoint, long feedback)
   lastTime = now;
   
   /*Compute PID Output (float math, but returns int)*/
-  int output = pulseKp * error + pulseKi * errSum + pulseKd * dErr;
+  long output = pulseKp * error + pulseKi * errSum + pulseKd * dErr;
   
   return output;
 }

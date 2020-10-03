@@ -86,6 +86,8 @@ long integrateProfile(float topSpeed)
   }
   unsigned int duration = now - startTime; //time since start of profile
 //  Serial.println(duration);
+  
+  int8_t dir = sgn(profilePositions[3] - profilePositions[0]);
 
   if (duration <= (profileTimes[1] - profileTimes[0]))
   {

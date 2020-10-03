@@ -159,7 +159,7 @@ void updateSensors()
 
 void moveTo(long setpoint, long target)
 {
-  static int milliVolts = 0;
+  static long milliVolts = 0;
   unsigned int now = millis();
   static unsigned int lastTime = now - sampleTime;
   if (now - lastTime >= sampleTime)
@@ -167,16 +167,19 @@ void moveTo(long setpoint, long target)
     milliVolts = computePID(setpoint, currentPosition);
     motorDriver(milliVolts, target - currentPosition);
     lastTime = now;
-  }
 
-//  if (debugPrint)
-//  {
-//    Serial.print("mV: ");
-//    Serial.println(milliVolts);
-//    Serial.println(motorStateNames[motorState]);
-//    Serial.println("-------------------------");
-//    debugPrint = false;
-//  }
+    static unsigned int lastPrintTime = now;
+    if (now - lastPrintTime >= 500)
+    {
+      Serial.print("mV: ");
+      Serial.println(milliVolts);
+      Serial.print("setpoint: ");
+      Serial.println(setpoint);
+      Serial.print("current pos: ");
+      Serial.println(currentPosition);
+      lastPrintTime = now;
+    }
+  }
 }
 
 
@@ -230,6 +233,8 @@ void loop()
         topSpeed = stopProfile();
         target = profilePositions[3];
         printProfile();
+        Serial.print("target: ");
+        Serial.println(target);
         Serial.print("current pos: ");
         Serial.println(currentPosition);
         Serial.print("current speed: ");
@@ -239,6 +244,19 @@ void loop()
           setpoint = integrateProfile(topSpeed);
           moveTo(setpoint, target);
           updateSensors();
+
+//          now = millis();
+//          if (now - lastPrintTime >= 1000)
+//          {
+//            Serial.print("setpoint: ");
+//            Serial.println(setpoint);
+//            Serial.print("current pos: ");
+//            Serial.println(currentPosition);
+//            Serial.print("current speed: ");
+//            Serial.println(currentSpeed);
+//            debugPrint = true;
+//            lastPrintTime = now;
+//          }
         }
       }
       else moveTo(setpoint, target);

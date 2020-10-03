@@ -13,7 +13,7 @@ enum motorState_enum {BRAKE, PWR_MOVE, DEGEN}; //declare the states as an enum
 motorState_enum motorState = BRAKE; // create the state variable of type state_enum
 String motorStateNames[3] = {"BRAKE", "PWR_MOVE", "DEGEN"}; // names of states for printing
 
-void motorDriver (int milliVolts, long error)
+void motorDriver (long milliVolts, long error)
 {
   // constrain the voltage command to system's supplyVoltage
   milliVolts = constrain(milliVolts, -supplyVoltage, supplyVoltage);
@@ -49,7 +49,11 @@ void motorDriver (int milliVolts, long error)
     // -------------------------------
     case PWR_MOVE:
 
-      if (sgn(milliVolts) != sgn(currentSpeed) && currentSpeed > minDegenSpeed) motorState = DEGEN;
+      if (sgn(milliVolts) != sgn(currentSpeed) && currentSpeed > minDegenSpeed)
+      {
+        motorState = DEGEN;
+        Serial.println(motorStateNames[motorState]);
+      }
 
       else
       {
