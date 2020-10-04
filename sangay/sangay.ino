@@ -322,6 +322,12 @@ void loop()
 
       if (motorState == BRAKE && abs(currentPosition - target) <= maxError) go = false;
 
+      if (limitSwitch)
+      {
+        homed = false;
+        go = false;
+      }
+
       if (!go)
       {
         dir = -dir;
