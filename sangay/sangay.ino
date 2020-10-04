@@ -239,6 +239,7 @@ void loop()
         target = stop();
         Serial.println("stop() done");
         setpoint = target;
+        go = false;
       }
       else moveTo(setpoint, target);
 
