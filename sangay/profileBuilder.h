@@ -105,9 +105,6 @@ long integrateProfile(float topSpeed)
     startTime = now;
     Serial.println("Integrate Started");
     integrateStart = false;
-//    Serial.println(startTime);
-//    Serial.print("DIR: ");
-//    Serial.println(dir);
   }
   unsigned int duration = now - startTime; //time since start of profile
 //  Serial.println(duration);

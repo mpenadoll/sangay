@@ -18,17 +18,6 @@ void motorDriver (long milliVolts, long error)
   // constrain the voltage command to system's supplyVoltage
   milliVolts = constrain(milliVolts, -supplyVoltage, supplyVoltage);
   error = abs(error); 
-  
-  if (debugPrint)
-  {
-    Serial.print("constrained mV: ");
-    Serial.println(milliVolts);
-    Serial.print("mapped mV: ");
-    Serial.println(map(abs(milliVolts),0,supplyVoltage,minPWM,255));
-    Serial.print("motor speed: ");
-    Serial.println(currentSpeed,5);
-    debugPrint = false;
-  }
 
   switch (motorState)
   {

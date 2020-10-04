@@ -161,18 +161,6 @@ void moveTo(long setpoint, long target)
     milliVolts = computePID(setpoint, currentPosition);
     motorDriver(milliVolts, target - currentPosition);
     lastTime = now;
-
-//    static unsigned int lastPrintTime = now;
-//    if (now - lastPrintTime >= 500)
-//    {
-//      Serial.print("mV: ");
-//      Serial.println(milliVolts);
-//      Serial.print("setpoint: ");
-//      Serial.println(setpoint);
-//      Serial.print("current pos: ");
-//      Serial.println(currentPosition);
-//      lastPrintTime = now;
-//    }
   }
 }
 
@@ -210,30 +198,27 @@ void loop()
     digitalWrite(lightPin, LOW);
   }
 
-  unsigned int now = millis();
-  static unsigned int lastPrintTime = now;
-  if (now - lastPrintTime >= 700 && state == HOMING)
-  {
-    Serial.print("setpoint: ");
-    Serial.println(setpoint);
-    Serial.print("current pos: ");
-    Serial.println(currentPosition);
-    Serial.print("current speed: ");
-    Serial.println(currentSpeed);
+//  unsigned int now = millis();
+//  static unsigned int lastPrintTime = now;
+//  if (now - lastPrintTime >= 700 && state == HOMING)
+//  {
+//    Serial.print("setpoint: ");
+//    Serial.println(setpoint);
+//    Serial.print("current pos: ");
+//    Serial.println(currentPosition);
+//    Serial.print("current speed: ");
+//    Serial.println(currentSpeed);
 //    debugPrint = true;
-    lastPrintTime = now;
-  }
+//    lastPrintTime = now;
+//  }
 
-  // {STOPPED, HOMING, MOVING_UP, MOVING_DOWN}
+  // FSM
   switch (state)
   {
     // -------------------------------
     case STOPPED:
 
-      // if motorstate not stop
-      // set target as soon as possible
-      // build a half triangle profile
-      // moveto target
+      // ensure system is not moving when STOPPED
       if (motorState != BRAKE)
       {
         target = stop();
@@ -243,6 +228,7 @@ void loop()
       }
       else moveTo(setpoint, target);
 
+      // when "go" set target, state, and build profile
       if (go)
       { 
         if (!homed)
@@ -273,7 +259,8 @@ void loop()
     // -------------------------------
     case HOMING:
 
-      // if limit switch, move up until not limit for set distance
+      // when limit switch activated, stop, build profile, and trip flag
+      // then move up and set home once limit switch deactivated
       if (limitSwitch && !homeFlag)
       {
         stop();
@@ -288,7 +275,6 @@ void loop()
         encoder.write(homeOffset + (currentPosition - homeMarker));
         for (int i = 0; i <= numReadings; i++)
         {
-          Serial.println("updated sensors i times");
           updateSensors();
           delay(sampleTime);
         }
@@ -321,6 +307,7 @@ void loop()
     // -------------------------------
     case MOVING:
 
+      // error if the limit switch is activated at any time
       if (limitSwitch)
       {
         homed = false;
