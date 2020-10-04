@@ -22,9 +22,9 @@ unsigned int profileTimes[4]; //{t0, t1, t2, t3} t0 is the start time, and t3 is
 bool debugPrint = false;
 
 // FSM STATES
-enum state_enum {STOPPED, HOMING, MOVING_UP, MOVING_DOWN}; //declare the states as an enum
+enum state_enum {STOPPED, HOMING, MOVING}; //declare the states as an enum
 state_enum state = STOPPED; // create the state variable of type state_enum
-String stateNames[4] = {"STOPPED", "HOMING", "MOVING_UP", "MOVING_DOWN"}; // names of states for printing
+String stateNames[3] = {"STOPPED", "HOMING", "MOVING"}; // names of states for printing
 
 // Import Libraries
 #include <Encoder.h>
@@ -237,6 +237,7 @@ void loop()
       if (motorState != BRAKE)
       {
         target = stop();
+        Serial.println("stop() done");
         setpoint = target;
       }
       else moveTo(setpoint, target);
@@ -251,13 +252,13 @@ void loop()
         }
         else if (dir == 1)
         {
-          state = MOVING_UP;
+          state = MOVING;
           target = stroke;
           topSpeed = buildProfile(target, maxSpeed);
         }
         else if (dir == -1)
         {
-          state = MOVING_DOWN;
+          state = MOVING;
           target = 0;
           topSpeed = buildProfile(target, maxSpeed);
         }
@@ -311,21 +312,25 @@ void loop()
         dir = 1;
         state = STOPPED;
         Serial.println(stateNames[state]);
+        target = currentPosition;
+        setpoint = target;
       }
 
       break;
     // -------------------------------
-    case MOVING_UP:
-
-      setpoint = integrateProfile(topSpeed);
-      moveTo(setpoint, target);
-
-      if (motorState == BRAKE && abs(currentPosition - target) <= maxError) go = false;
+    case MOVING:
 
       if (limitSwitch)
       {
         homed = false;
+        Serial.println("Homed = false");
         go = false;
+      }
+      else
+      {
+        setpoint = integrateProfile(topSpeed);
+        moveTo(setpoint, target);
+        if (motorState == BRAKE && abs(currentPosition - target) <= maxError) go = false;
       }
 
       if (!go)
@@ -333,30 +338,8 @@ void loop()
         dir = -dir;
         state = STOPPED;
         Serial.println(stateNames[state]);
-        Serial.print("GO: ");
-        Serial.println(go);
-      }
-
-      break;
-    // -------------------------------
-    case MOVING_DOWN:
-
-      setpoint = integrateProfile(topSpeed);
-      moveTo(setpoint, target);
-
-      if (motorState == BRAKE && abs(currentPosition - target) <= maxError) go = false;
-
-      if (limitSwitch)
-      {
-        homed = false;
-        go = false;
-      }
-
-      if (!go)
-      {
-        dir = -dir;
-        state = STOPPED;
-        Serial.println(stateNames[state]);
+        target = currentPosition;
+        setpoint = target;
       }
 
       break;
