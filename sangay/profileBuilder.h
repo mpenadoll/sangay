@@ -7,6 +7,7 @@
  * output:
  * 1. topSpeed, top speed of the profile in case expected "speed" not reached [pulses/ms]
 */
+bool integrateStart = true; // initializes the start of an integration profile
 
 float buildProfile(long target, float speed)
 {

@@ -2,6 +2,7 @@
  * computes the PID controller output in milliVolts
  * converts the gains to the appropriate units
  */
+float pulseKp, pulseKi, pulseKd; // pulse conversion declarations
 
 long computePID(long setpoint, long feedback)
 {

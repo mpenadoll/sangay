@@ -19,7 +19,6 @@ float accel = PPR * 2 * accelMM / (pulleyRadius * 2 * 3.14 * 1000 * 1000);  // a
 float Kp = 1000.0; //* proportional gain [V / m]
 float Ki = 0.0; //* integral gain [V / (m*s)]
 float Kd = 0.0; //* derivative gain [V * s / m]
-float pulseKp, pulseKi, pulseKd; // pulse conversion declarations
 
 // CONSTANTS
 const unsigned int sampleTime = 30; // sample time for derivative measurements [ms]
