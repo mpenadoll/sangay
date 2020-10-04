@@ -8,14 +8,23 @@ bool go = false; // the state of the drive system (go or stop)
 bool homed = false;  // has the stepper been properly homed
 int limitSwitch = LOW;  // the state of the limit switch
 int8_t dir = 1; //the current state direction of the drive system (up is HIGH)
-int8_t lastDir = 1; //the last direction of the system, to check if it switched
 int buttonState = HIGH; // the current reading from the input pin
-int currentPosition; //the current position [pulses]
+long currentPosition; //the current position [pulses]
+
 float currentSpeed; //the current speed (average) [pulses / ms]
-int profilePositions[4]; //{x0, x1, x2, x3} x0 is the start position, and x3 is the end position [pulses]
+const int numReadings = 4; //number of readings for speed moving average
+int readIndex; //index to update the readings
+float speedReadings[numReadings]; // array for speed moving average
+float speedTotal; // sum of speed readings
+
+long profilePositions[4]; //{x0, x1, x2, x3} x0 is the start position, and x3 is the end position [pulses]
 unsigned int profileTimes[4]; //{t0, t1, t2, t3} t0 is the start time, and t3 is the end time [ms]
-bool integrateStart = true; // initializes the start of an integration profile
 bool debugPrint = false;
+
+// FSM STATES
+enum state_enum {STOPPED, HOMING, MOVING}; //declare the states as an enum
+state_enum state = STOPPED; // create the state variable of type state_enum
+String stateNames[3] = {"STOPPED", "HOMING", "MOVING"}; // names of states for printing
 
 // Import Libraries
 #include <Encoder.h>
@@ -27,13 +36,13 @@ bool debugPrint = false;
 // Initialize Encoder
 Encoder encoder(encoderApin, encoderBpin);
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
   
   // put your setup code here, to run once:
   setGains();
   encoder.write(0);
-  profilePositions[3] = -stroke;
   
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(limitSwitchPin, INPUT);
@@ -64,10 +73,6 @@ void setup() {
   Serial.println(accelMM,4);
   Serial.print("Acceleration [pulses/ms^2]: ");
   Serial.println(accel,4);
-  Serial.print("Acceleration Time [ms]: ");
-  Serial.println(accelTime,4);
-  Serial.print("Acceleration Distance [pulses]: ");
-  Serial.println(accelDistance,4);
   Serial.println("-------------------");
   Serial.print("Kp: ");
   Serial.println(Kp,4);
@@ -95,7 +100,8 @@ void setup() {
   Serial.println("READY");
 }
 
-void updateSensors(){
+void updateSensors()
+{
   // update button and limit switches
   int reading = digitalRead(buttonPin);  // read the state of the switch into a local variable
   limitSwitch = digitalRead(limitSwitchPin);
@@ -105,11 +111,20 @@ void updateSensors(){
   static unsigned int lastTime = now - sampleTime;
 
   // read encoder and calculate the speed
-  int newPosition = encoder.read();
-  static int lastPosition = newPosition;
+  long newPosition = encoder.read();
+  static long lastPosition = newPosition;
   // only calculate the speed if time elapsed has been more than set sample time
-  if (now - lastTime >= sampleTime){
-    currentSpeed = (newPosition - lastPosition)/(float)(now - lastTime);
+  if (now - lastTime >= sampleTime)
+  {
+    speedTotal -= speedReadings[readIndex];
+    speedReadings[readIndex] = (newPosition - lastPosition)/(float)(now - lastTime);
+    speedTotal += speedReadings[readIndex];
+
+    readIndex += 1;
+    if (readIndex >= numReadings) readIndex = 0;
+
+    currentSpeed = speedTotal / numReadings;
+
     // save static variables for next round
     lastTime = now;
     lastPosition = newPosition;
@@ -121,189 +136,56 @@ void updateSensors(){
   // reset the debouncing timer if reading has changed
   if (reading != lastButtonState) lastDebounceTime = now;
 
-  if ((now - lastDebounceTime) > debounceDelay && reading != buttonState) {
+  if ((now - lastDebounceTime) > debounceDelay && reading != buttonState)
+  {
     // whatever the reading is at, it's been there for longer than the debounce
     // delay, and the button state has changed
     buttonState = reading;
-    if (buttonState == LOW) {
+    if (buttonState == LOW)
+    {
       go = !go;       // change system state to go
       Serial.print("GO: ");
       Serial.println(go);
-      if (!go && homed) dir = -dir; // reverse directions if motion stopped with button, and homed
     }
   }
   lastButtonState = reading; // save the reading. Next time through the loop, it'll be the lastButtonState
-
-  static unsigned int lastPrintTime = now;
-  if (now - lastPrintTime >= 1000)
-  {
-    debugPrint = true;
-    lastPrintTime = now;
-  }
 }
 
-void moveTo(int positionSetpoint)
+void moveTo(long setpoint, long target)
 {
-  float milliVolts = computePID(positionSetpoint, currentPosition);
-  motorDriver(milliVolts, currentSpeed);
-
-  if (debugPrint)
-  {
-    Serial.println(motorStateNames[motorState]);
-    Serial.print("mV: ");
-    Serial.println(milliVolts);
-    Serial.println("-------------------------");
-    debugPrint = false;
-  }
-}
-
-void stopNow(){
-  Serial.println("STOPPING");
-  int8_t stopDir = sgn(currentSpeed);
-  unsigned int startTime = millis();
-  int startPosition = currentPosition;
-  if (stopDir == 1) startPosition += 1.0*currentSpeed*sampleTime; // add fudge factor to make stopping smooth
-  else startPosition += 1.0*currentSpeed*sampleTime;
-  float startSpeed = abs(currentSpeed);
-  int distance = accel * (startSpeed/accel) * (startSpeed/accel) / 2;
-  int endPosition = startPosition + stopDir*distance;
-  int posSetpoint = startPosition; // initialize setpoint [pulses]
-  float milliVolts;
-  unsigned int now = startTime;
-  unsigned int lastTime = now;
-  integrateStart = true;
-  while (abs(posSetpoint - endPosition) > error){
-    if (now - lastTime >= sampleTime){
-      int deltaT = now - startTime; // calculate the time change from begginning of stop
-      posSetpoint = startPosition + stopDir*(startSpeed*deltaT - accel*deltaT*deltaT/2); // [pulses]
-      moveTo(posSetpoint);
-      // save static variables for next round
-      lastTime = now;
-    }
-    updateSensors();
-    now = millis();
-  }
-  while (motorState != STOP) {
-    if (now - lastTime >= sampleTime){
-      moveTo(endPosition);
-      lastTime = now;
-    }
-    updateSensors();
-    now = millis();
-  }
-  delay(50);
-  Serial.println("DONE STOPPING");
-}
-
-void homeNow(){
-  Serial.println("HOMING");
-  if (currentSpeed != 0) stopNow();
-  encoder.write(0);
-  buildProfile();
-  printProfile();
-  int posSetpoint;
-  float milliVolts;
-  dir = -1;
-  integrateStart = true;
+  static long milliVolts = 0;
   unsigned int now = millis();
-  unsigned int lastTime = now - sampleTime;
-  while (!limitSwitch && go){
-    if (now - lastTime >= sampleTime){
-      posSetpoint = integrateProfile(); // [pulses]
-      moveTo(posSetpoint);
-      // save static variables for next round
-      lastTime = now;
-    }
-    updateSensors();
-    now = millis();
+  static unsigned int lastTime = now - sampleTime;
+  if (now - lastTime >= sampleTime)
+  {
+    milliVolts = computePID(setpoint, currentPosition);
+    motorDriver(milliVolts, target - currentPosition);
+    lastTime = now;
   }
-  if (currentSpeed != 0) stopNow();
-  now = millis();
-  lastTime = now - sampleTime;  
-  posSetpoint = currentPosition;
-  integrateStart = true;
-  while (limitSwitch && go){
-    if (now - lastTime >= sampleTime){
-      posSetpoint += homeStep;
-      moveTo(posSetpoint);
-      lastTime = now;
-    }
-    updateSensors();
-    now = millis();
-  }
-  unsigned int startTime = now;
-  while ((now - startTime) < limitTime && go){
-    if (now - lastTime >= sampleTime){
-      posSetpoint += homeStep;
-      moveTo(posSetpoint);
-      lastTime = now;
-    }
-    updateSensors();
-    now = millis();
-  }
-  lastTime = now - sampleTime;
-  integrateStart = true;
-  while (!limitSwitch && go){
-    if (now - lastTime >= sampleTime){
-      posSetpoint -= homeStep;
-      moveTo(posSetpoint);
-      lastTime = now;
-    }
-    updateSensors();
-    now = millis();
-  }
-  startTime = now;
-  while ((now - startTime) < limitTime && go){
-    if (now - lastTime >= sampleTime){
-      posSetpoint -= homeStep;
-      moveTo(posSetpoint);
-      lastTime = now;
-    }
-    updateSensors();
-    now = millis();
-  }
-  if (currentSpeed != 0) stopNow();
-  if (limitSwitch && go) {
-    encoder.write(0);
-    homed = true;
-  }
-  go = false;
-  dir = 1;
-  lastDir = -1;
-  Serial.println("DONE HOMING");
 }
 
-void loop() {
-
-  //check if system thinks it is at 0 but is not at home
-  if (abs(currentPosition) < error && !limitSwitch && homed) {
-    homed = false;
-    Serial.println("HOME FAILED (OUTSIDE LIMIT)");
+long stop()
+{
+  float topSpeed = stopProfile();
+  long target = profilePositions[3];
+  while (motorState != BRAKE)
+  {
+    long setpoint = integrateProfile(topSpeed);
+    moveTo(setpoint, target);
+    updateSensors();
   }
+  return target;
+}
 
-  //check if system is at home and doesn't know it, and travelling downwards
-  if (limitSwitch && abs(currentPosition) > error && dir == -1 && homed) {
-    homed = false;
-    Serial.println("HOME FAILED (INSIDE LIMIT)");
-  }
 
-  //check if target has been reached
-  if (abs(currentPosition - profilePositions[3]) < error && currentSpeed == 0){
-    dir = -dir;
-    go = false;
-    Serial.println("TARGET REACHED");
-  }
+void loop()
+{
+  updateSensors();
 
-  //if the direction has changed, update the target and build the profile
-  if (dir != lastDir){
-    if (dir == 1) profilePositions[3] = stroke;
-    else profilePositions[3] = 0;
-    buildProfile();
-    lastDir = dir;
-    integrateStart = true;
-    Serial.println("PROFILE BUILT");
-    printProfile();
-  }
+  static long target = 0; // finishing position of a profile
+  static long setpoint = 0; // next step along a profile
+  static bool homeFlag = false; // flag for setting 0 when hitting limit switch
+  static float topSpeed = 0; // speed to transfer from profile builder to integrator
 
   //if the position is greater than the lighting up position, turn on the LED strip
   //otherwise, turn it off
@@ -315,22 +197,140 @@ void loop() {
   {
     digitalWrite(lightPin, LOW);
   }
+
+//  unsigned int now = millis();
+//  static unsigned int lastPrintTime = now;
+//  if (now - lastPrintTime >= 700 && state == HOMING)
+//  {
+//    Serial.print("setpoint: ");
+//    Serial.println(setpoint);
+//    Serial.print("current pos: ");
+//    Serial.println(currentPosition);
+//    Serial.print("current speed: ");
+//    Serial.println(currentSpeed);
+//    debugPrint = true;
+//    lastPrintTime = now;
+//  }
+
+  // FSM
+  switch (state)
+  {
+    // -------------------------------
+    case STOPPED:
+
+      // ensure system is not moving when STOPPED
+      if (motorState != BRAKE)
+      {
+        target = stop();
+        Serial.println("stop() done");
+        setpoint = target;
+        go = false;
+      }
+      else moveTo(setpoint, target);
+
+      // when "go" set target, state, and build profile
+      if (go)
+      { 
+        if (!homed)
+        {
+          state = HOMING;
+          target = -stroke;
+          topSpeed = buildProfile(target, homeSpeed);
+        }
+        else if (dir == 1)
+        {
+          state = MOVING;
+          target = stroke;
+          topSpeed = buildProfile(target, maxSpeed);
+        }
+        else if (dir == -1)
+        {
+          state = MOVING;
+          target = 0;
+          topSpeed = buildProfile(target, maxSpeed);
+        }
+        Serial.println(stateNames[state]);
+        Serial.print("Top Speed: ");
+        Serial.println(topSpeed);
+        printProfile();
+      }
+
+      break;
+    // -------------------------------
+    case HOMING:
+
+      // when limit switch activated, stop, build profile, and trip flag
+      // then move up and set home once limit switch deactivated
+      if (limitSwitch && !homeFlag)
+      {
+        stop();
+        target = stroke;
+        topSpeed = buildProfile(target, limitSpeed);
+        homeFlag = true;
+      }
+      else if (!limitSwitch && homeFlag)
+      {
+        long homeMarker = currentPosition;
+        stop();
+        encoder.write(homeOffset + (currentPosition - homeMarker));
+        for (int i = 0; i <= numReadings; i++)
+        {
+          updateSensors();
+          delay(sampleTime);
+        }
+        homed = true;
+        homeFlag = false;
+        Serial.println("Homed = true");
+        target = 0;
+        topSpeed = buildProfile(target, limitSpeed);
+        Serial.print("topSpeed: ");
+        Serial.println(topSpeed);
+        printProfile();
+      }
   
-  updateSensors();
-  
-  if (go && homed) {
-    //Serial.println("RUNNING");
-    unsigned int now = millis();
-    static unsigned int lastTime = now - sampleTime;
-    if (now - lastTime >= sampleTime){
-      int posSetpoint = integrateProfile(); // [pulses]
-      moveTo(posSetpoint);
-      // save static variables for next round
-      lastTime = now;
-    }
-  }
-  else if (go && !homed) homeNow();
-  else {
-    if (currentSpeed != 0) stopNow();
+      setpoint = integrateProfile(topSpeed);
+      moveTo(setpoint, target);
+
+      if (motorState == BRAKE && abs(currentPosition - target) <= maxError && homed) go = false;
+
+      if (!go)
+      {
+        homeFlag = false;
+        dir = 1;
+        state = STOPPED;
+        Serial.println(stateNames[state]);
+        target = currentPosition;
+        setpoint = target;
+      }
+
+      break;
+    // -------------------------------
+    case MOVING:
+
+      // error if the limit switch is activated at any time
+      if (limitSwitch)
+      {
+        homed = false;
+        Serial.println("Homed = false");
+        go = false;
+      }
+      else
+      {
+        setpoint = integrateProfile(topSpeed);
+        moveTo(setpoint, target);
+        if (motorState == BRAKE && abs(currentPosition - target) <= maxError) go = false;
+      }
+
+      if (!go)
+      {
+        dir = -dir;
+        state = STOPPED;
+        Serial.println(stateNames[state]);
+        target = currentPosition;
+        setpoint = target;
+      }
+
+      break;
+    // -------------------------------
   }
 }

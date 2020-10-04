@@ -2,22 +2,24 @@
  * computes the PID controller output in milliVolts
  * converts the gains to the appropriate units
  */
+float pulseKp, pulseKi, pulseKd; // pulse conversion declarations
 
-float computePID(int setpoint, int feedback){
+long computePID(long setpoint, long feedback)
+{
   
   unsigned int now = millis();
 
   /*Compute all the working error variables*/
-  int error = setpoint - feedback;
+  long error = setpoint - feedback;
   static unsigned int lastTime = now - 1;
   static float errSum = 0;
-  static int lastErr = error;
-  if (integrateStart) {
-    lastTime = now - 1;
-    errSum = 0;
-    lastErr = error;
-    integrateStart = false;
-  }
+  static long lastErr = error;
+//  if (integrateStart) {
+//    lastTime = now - 1;
+//    errSum = 0;
+//    lastErr = error;
+//    integrateStart = false;
+//  }
   unsigned int timeChange = now - lastTime;
   errSum += (float)error * timeChange;
   float dErr = (error - lastErr) / (float)timeChange;
@@ -27,29 +29,14 @@ float computePID(int setpoint, int feedback){
   lastTime = now;
   
   /*Compute PID Output (float math, but returns int)*/
-  float output = pulseKp * error + pulseKi * errSum + pulseKd * dErr;
-
-//  if (debugPrint)
-//  {
-//    Serial.print("setpoint: ");
-//    Serial.println(setpoint);
-//    Serial.print("feedback: ");
-//    Serial.println(feedback);
-//    Serial.print("error: ");
-//    Serial.println(error);
-//    Serial.print("errSum: ");
-//    Serial.println(errSum);
-//    Serial.print("dErr: ");
-//    Serial.println(dErr);
-//    Serial.print("output: ");
-//    Serial.println(output);
-//  }
+  long output = pulseKp * error + pulseKi * errSum + pulseKd * dErr;
   
   return output;
 }
 
 // Convert the gains to the correct units
-void setGains(){  
+void setGains()
+{  
   pulseKp = Kp * 3.14 * pulleyRadius / PPR; //proportional gain [mV / pulse]
   pulseKi = Ki * 3.14 * pulleyRadius / (PPR * 1000.0); //integral gain [mV / (pulse * ms)]
   pulseKd = Kd * 3.14 * pulleyRadius * 1000.0 / PPR; //derivative gain [mV * ms / pulse]

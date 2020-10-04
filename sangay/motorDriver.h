@@ -4,38 +4,45 @@ Motor brake (for holding position)
 Degenerative braking (for slowing motor)
 inputs:
     1. milliVolts, float, from PID controller [mV]
-    2. motorSpeed, float, [pulses / ms]
+    2. error, long [pulses]
+    3. currentSpeed, float, global [pulses / ms]
 */
 
 // FSM STATES
-enum motorState_enum {STOP, PWR_MOVE, DEGEN}; //declare the states as an enum
-motorState_enum motorState = STOP; // create the state variable of type state_enum
-String motorStateNames[4] = {"STOP", "PWR_MOVE", "DEGEN"}; // names of states for printing
+enum motorState_enum {BRAKE, PWR_MOVE, DEGEN}; //declare the states as an enum
+motorState_enum motorState = BRAKE; // create the state variable of type state_enum
+String motorStateNames[3] = {"BRAKE", "PWR_MOVE", "DEGEN"}; // names of states for printing
 
-void motorDriver (float milliVolts, float motorSpeed)
+void motorDriver (long milliVolts, long error)
 {
   // constrain the voltage command to system's supplyVoltage
   milliVolts = constrain(milliVolts, -supplyVoltage, supplyVoltage);
+  error = abs(error); 
 
   switch (motorState)
   {
     // -------------------------------
-    case STOP:
+    case BRAKE:
 
       analogWrite(PWMpin, 0); //set PWM for motor driver
       analogWrite(degenPWMpin, 255); //set degen PWM for resistors
       digitalWrite(brakePin, LOW); //engage brake
 
-      if (milliVolts != 0)
+      if (error > maxError)
       {
         motorState = PWR_MOVE;
+        Serial.println(motorStateNames[motorState]);
       }
     
       break;
     // -------------------------------
     case PWR_MOVE:
 
-      if (sgn(milliVolts) != sgn(motorSpeed) && motorSpeed > minDegenSpeed) motorState = DEGEN;
+      if (sgn(milliVolts) != sgn(currentSpeed) && currentSpeed > minDegenSpeed)
+      {
+        motorState = DEGEN;
+        Serial.println(motorStateNames[motorState]);
+      }
 
       else
       {
@@ -46,7 +53,11 @@ void motorDriver (float milliVolts, float motorSpeed)
         analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,minPWM,255)); //set PWM for motor driver
       }
       
-      if (milliVolts == 0 && motorSpeed == 0) motorState = STOP;
+      if (error <= maxError && currentSpeed <= minSpeed)
+      {
+        motorState = BRAKE;
+        Serial.println(motorStateNames[motorState]);
+      }
 
       break;
     // -------------------------------
@@ -56,12 +67,16 @@ void motorDriver (float milliVolts, float motorSpeed)
       analogWrite(PWMpin, 0); //set PWM for motor driver
       analogWrite(degenPWMpin, map(abs(milliVolts),0,supplyVoltage,0,255)); //set degen PWM for resistors
 
-      if (sgn(milliVolts) == sgn(motorSpeed) || motorSpeed < minDegenSpeed) motorState = PWR_MOVE;
+      if (sgn(milliVolts) == sgn(currentSpeed) || currentSpeed < minDegenSpeed)
+      {
+        motorState = PWR_MOVE;
+        Serial.println(motorStateNames[motorState]);
+      }
 
       break;
     // -------------------------------
     default:
-      motorState = STOP;
+      motorState = BRAKE;
       break;
     // -------------------------------
   }
