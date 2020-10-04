@@ -5,7 +5,7 @@
 
 // VARIABLES
 bool go = false; // the state of the drive system (go or stop)
-bool homed = true;  // has the stepper been properly homed
+bool homed = false;  // has the stepper been properly homed
 int limitSwitch = LOW;  // the state of the limit switch
 int8_t dir = 1; //the current state direction of the drive system (up is HIGH)
 int buttonState = HIGH; // the current reading from the input pin
@@ -39,7 +39,7 @@ Encoder encoder(encoderApin, encoderBpin);
 
 void setup()
 {
-//  Serial.begin(9600);
+  Serial.begin(9600);
   
   // put your setup code here, to run once:
   setGains();
@@ -163,23 +163,22 @@ void moveTo(long setpoint, long target)
     motorDriver(milliVolts, target - currentPosition);
     lastTime = now;
 
-    static unsigned int lastPrintTime = now;
-    if (now - lastPrintTime >= 500)
-    {
-      Serial.print("mV: ");
-      Serial.println(milliVolts);
-      Serial.print("setpoint: ");
-      Serial.println(setpoint);
-      Serial.print("current pos: ");
-      Serial.println(currentPosition);
-      lastPrintTime = now;
-    }
+//    static unsigned int lastPrintTime = now;
+//    if (now - lastPrintTime >= 500)
+//    {
+//      Serial.print("mV: ");
+//      Serial.println(milliVolts);
+//      Serial.print("setpoint: ");
+//      Serial.println(setpoint);
+//      Serial.print("current pos: ");
+//      Serial.println(currentPosition);
+//      lastPrintTime = now;
+//    }
   }
 }
 
 long stop()
 {
-  integrateStart = true;
   float topSpeed = stopProfile();
   long target = profilePositions[3];
   while (motorState != BRAKE)
@@ -214,7 +213,7 @@ void loop()
 
   unsigned int now = millis();
   static unsigned int lastPrintTime = now;
-  if (now - lastPrintTime >= 1000)
+  if (now - lastPrintTime >= 700 && state == HOMING)
   {
     Serial.print("setpoint: ");
     Serial.println(setpoint);
@@ -222,7 +221,7 @@ void loop()
     Serial.println(currentPosition);
     Serial.print("current speed: ");
     Serial.println(currentSpeed);
-    debugPrint = true;
+//    debugPrint = true;
     lastPrintTime = now;
   }
 
@@ -263,7 +262,6 @@ void loop()
           target = 0;
           topSpeed = buildProfile(target, maxSpeed);
         }
-        integrateStart = true;
         Serial.println(stateNames[state]);
         Serial.print("Top Speed: ");
         Serial.println(topSpeed);
@@ -278,15 +276,16 @@ void loop()
       if (limitSwitch && !homeFlag)
       {
         stop();
-        integrateStart = true;
         target = stroke;
         topSpeed = buildProfile(target, limitSpeed);
         homeFlag = true;
       }
       else if (!limitSwitch && homeFlag)
       {
-        encoder.write(-homeOffset);
-        for (int i = 0; i < numReadings; i++)
+        long homeMarker = currentPosition;
+        stop();
+        encoder.write(homeOffset + (currentPosition - homeMarker));
+        for (int i = 0; i <= numReadings; i++)
         {
           Serial.println("updated sensors i times");
           updateSensors();
@@ -297,6 +296,9 @@ void loop()
         Serial.println("Homed = true");
         target = 0;
         topSpeed = buildProfile(target, limitSpeed);
+        Serial.print("topSpeed: ");
+        Serial.println(topSpeed);
+        printProfile();
       }
   
       setpoint = integrateProfile(topSpeed);
@@ -306,6 +308,7 @@ void loop()
 
       if (!go)
       {
+        homeFlag = false;
         dir = 1;
         state = STOPPED;
         Serial.println(stateNames[state]);

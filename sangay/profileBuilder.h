@@ -10,6 +10,9 @@
 
 float buildProfile(long target, float speed)
 {
+  // tell the integrator it's time to start over
+  integrateStart = true;
+  
   // Function to calculate the position at times of the trapezoidal OR triangular profile
   // Note that profilePosition[3] is the target point, and should be set to the input
 
@@ -24,6 +27,15 @@ float buildProfile(long target, float speed)
   float accelTime = speed / accel; //time to accelerate and decelerate from stop [ms]
   float accelDistance = 0.5 * accel * accelTime * accelTime; //the minimum distance to accelerate to max speed [pulses]
   long distance = profilePositions[3] - profilePositions[0]; //distance to travel for profile [pulses]
+
+  Serial.print("topSpeed: ");
+  Serial.println(topSpeed);
+  Serial.print("accelTime: ");
+  Serial.println(accelTime);
+  Serial.print("accelDistance: ");
+  Serial.println(accelDistance);
+  Serial.print("distance: ");
+  Serial.println(distance);
   
   // Trapezoidal Profile Calculations
   if (abs(distance) >= 2*accelDistance)
@@ -43,7 +55,7 @@ float buildProfile(long target, float speed)
   else
   {
     // End of Acceleration Point t1 / x1
-    profilePositions[1] = profilePositions[0] + sgn(distance)*distance/2; //position at top of triangle [pulses]
+    profilePositions[1] = profilePositions[0] + distance/2; //position at top of triangle [pulses]
     profileTimes[1] = profileTimes[0] + sqrt(abs(distance)/accel); //time at top of triangle [ms]
     
     // Position at the top is also t2 / x2
@@ -99,6 +111,9 @@ long integrateProfile(float topSpeed)
 
 float stopProfile()
 {
+  // tell the integrator it's time to start over
+  integrateStart = true;
+  
   // starting point t0, x0
   profileTimes[0] = 0; //set t0 to time 0 [ms]
   profilePositions[0] = currentPosition + sgn(currentSpeed)*stopFudge; //set x0 to current position [pulses]
