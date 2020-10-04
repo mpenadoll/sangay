@@ -70,6 +70,30 @@ float buildProfile(long target, float speed)
   return topSpeed;
 }
 
+float stopProfile()
+{
+  // tell the integrator it's time to start over
+  integrateStart = true;
+  
+  // starting point t0, x0
+  profileTimes[0] = 0; //set t0 to time 0 [ms]
+  profilePositions[0] = currentPosition + sgn(currentSpeed)*stopFudge; //set x0 to current position [pulses]
+
+  // set point 1 and 2 equal to point 0
+  profilePositions[1] = profilePositions[0];
+  profileTimes[1] = profileTimes[0];
+
+  profilePositions[2] = profilePositions[1];
+  profileTimes[2] = profileTimes[1];
+
+  float topSpeed = abs(currentSpeed);
+
+  profilePositions[3] = profilePositions[2] + sgn(currentSpeed)*topSpeed*topSpeed/(2*accel);
+  profileTimes[3] = profileTimes[2] + topSpeed/accel;
+  
+  return topSpeed;
+}
+
 long integrateProfile(float topSpeed)
 {
   // Integrates the profile and returns a new position setpoint for the controller
@@ -107,30 +131,6 @@ long integrateProfile(float topSpeed)
   else {
     return profilePositions[3]; //return the current position
   }
-}
-
-float stopProfile()
-{
-  // tell the integrator it's time to start over
-  integrateStart = true;
-  
-  // starting point t0, x0
-  profileTimes[0] = 0; //set t0 to time 0 [ms]
-  profilePositions[0] = currentPosition + sgn(currentSpeed)*stopFudge; //set x0 to current position [pulses]
-
-  // set point 1 and 2 equal to point 0
-  profilePositions[1] = profilePositions[0];
-  profileTimes[1] = profileTimes[0];
-
-  profilePositions[2] = profilePositions[1];
-  profileTimes[2] = profileTimes[1];
-
-  float topSpeed = abs(currentSpeed);
-
-  profilePositions[3] = profilePositions[2] + sgn(currentSpeed)*topSpeed*topSpeed/(2*accel);
-  profileTimes[3] = profileTimes[2] + topSpeed/accel;
-  
-  return topSpeed;
 }
 
 void printProfile()
