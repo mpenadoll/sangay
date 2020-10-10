@@ -1,10 +1,10 @@
 //Settings file for the spice rack and motor
 
 // Motion Profile Variables
-float strokeMM = 500.0;     // stroke [mm] 431.8
+float strokeMM = 490.0;     // stroke [mm] 431.8
 float pulleyRadius = 24.41;  // radius of the pulley [mm]
 float maxSpeedMM = 80.0;     // max speed of rack [mm/s]
-float homeSpeedMM = 30.0; // homing speed [mm/s]
+float homeSpeedMM = 25.0; // homing speed [mm/s]
 float accelMM = 150.0;        // acceleration of rack [mm/s^2]
 float PPR = 1440.0;  // number of pulses of encoder per rev
 
