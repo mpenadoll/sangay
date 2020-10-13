@@ -40,8 +40,8 @@ const int limitSwitchPin = 6; //limitSwitch signal in
 const int encoderApin = 3;  //Best Performance: both pins have interrupt capability
 const int encoderBpin = 2;  //Best Performance: both pins have interrupt capability
 const int lightPin = 7; //pin for the LED mosfet
-const int brakePin = 9; //pin for the motor brake MOSFET
-const int degenPWMpin = 11; //pin to set the PWM on the degen power resistors
+const int brakePin = 11; //pin for the motor brake MOSFET
+const int degenPWMpin = 9; //pin to set the PWM on the degen power resistors
 
 // SUPPORTING FUNCTIONS
 static inline int8_t sgn(float val)
