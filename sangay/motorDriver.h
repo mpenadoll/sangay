@@ -25,7 +25,7 @@ void motorDriver (long milliVolts, long error)
     case BRAKE:
 
       analogWrite(PWMpin, 0); //set PWM for motor driver
-      analogWrite(degenPWMpin, 255); //set degen PWM for resistors
+      // analogWrite(degenPWMpin, 255); //set degen PWM for resistors
       digitalWrite(brakePin, LOW); //engage brake
 
       if (error > maxError)
@@ -47,7 +47,7 @@ void motorDriver (long milliVolts, long error)
       else
       {
         digitalWrite(brakePin, HIGH); //disengage brake
-        analogWrite(degenPWMpin, 0); //set degen PWM for resistors
+        // analogWrite(degenPWMpin, 0); //set degen PWM for resistors
         if (sgn(milliVolts) == 1) digitalWrite(dirPin, LOW); //set direction for motor driver
         else digitalWrite(dirPin, HIGH);
         analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,minPWM,255)); //set PWM for motor driver
@@ -65,7 +65,7 @@ void motorDriver (long milliVolts, long error)
 
       digitalWrite(brakePin, HIGH); //disengage brake
       analogWrite(PWMpin, 0); //set PWM for motor driver
-      analogWrite(degenPWMpin, map(abs(milliVolts),0,supplyVoltage,0,255)); //set degen PWM for resistors
+      // analogWrite(degenPWMpin, map(abs(milliVolts),0,supplyVoltage,0,255)); //set degen PWM for resistors
 
       if (sgn(milliVolts) == sgn(currentSpeed) || currentSpeed < minDegenSpeed)
       {

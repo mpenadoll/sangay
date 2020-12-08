@@ -164,6 +164,18 @@ void moveTo(long setpoint, long target)
   }
 }
 
+long quickStop()
+{
+  static long setpoint = currentPosition;
+  long target = stepoint;
+  while (motorState != BRAKE)
+  {
+    moveTo(setpoint, target);
+    updateSensors();
+  }
+  return target;
+}
+
 long stop()
 {
   float topSpeed = stopProfile();
@@ -177,6 +189,13 @@ long stop()
   return target;
 }
 
+void inching(int step, long startPosition)
+{
+
+  moveTo(currentPosition + step, startPosition + );
+  delay(100);
+}
+
 
 void loop()
 {
@@ -184,7 +203,7 @@ void loop()
 
   static long target = 0; // finishing position of a profile
   static long setpoint = 0; // next step along a profile
-  static bool homeFlag = false; // flag for setting 0 when hitting limit switch
+  // static bool homeFlag = false; // flag for setting 0 when hitting limit switch
   static float topSpeed = 0; // speed to transfer from profile builder to integrator
 
   //if the position is greater than the lighting up position, turn on the LED strip
@@ -259,39 +278,36 @@ void loop()
     // -------------------------------
     case HOMING:
 
+      setpoint = integrateProfile(topSpeed);
+      moveTo(setpoint, target);
+
       // when limit switch activated, stop, build profile, and trip flag
       // then move up and set home once limit switch deactivated
-      if (limitSwitch && !homeFlag)
+      if (limitSwitch)
       {
         stop();
-        target = stroke;
-        topSpeed = buildProfile(target, limitSpeed);
-        homeFlag = true;
-      }
-      else if (!limitSwitch && homeFlag)
-      {
-        long homeMarker = currentPosition;
-        stop();
-        encoder.write(homeOffset + (currentPosition - homeMarker));
+        while (limitSwitch)
+        {
+          inching(1);
+          updateSensors();
+        }
+        quickStop();
+        encoder.write(homeOffset);
         for (int i = 0; i <= numReadings; i++)
         {
           updateSensors();
           delay(sampleTime);
         }
         homed = true;
-        homeFlag = false;
         Serial.println("Homed = true");
-        target = 0;
-        topSpeed = buildProfile(target, limitSpeed);
-        Serial.print("topSpeed: ");
-        Serial.println(topSpeed);
-        printProfile();
+        while (abs(currentPosition) > error)
+        {
+          inching(1);
+          updateSensors();
+        }
+        quickStop();
+        go = false;
       }
-  
-      setpoint = integrateProfile(topSpeed);
-      moveTo(setpoint, target);
-
-      if (motorState == BRAKE && abs(currentPosition - target) <= maxError && homed) go = false;
 
       if (!go)
       {

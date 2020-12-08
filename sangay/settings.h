@@ -24,7 +24,7 @@ float Kd = 0.0; //* derivative gain [V * s / m]
 const unsigned int sampleTime = 30; // sample time for derivative measurements [ms]
 const unsigned int debounceDelay = 50;  // the debounce time; increase if the output flickers
 const int maxError = 60; //* error [pulses] allowable for position control. 5 pulses = 0.27 mm
-const int homeOffset = -20; // distance between limit and 0, positive. 20 pulses = 1.07 mm
+const int homeOffset = -200; //* distance between limit and 0, negative number. 20 pulses = 1.07 mm
 const long lightPosition = 0.2 * stroke; // position to turn on lights [pulses]
 const long supplyVoltage = 24000; // system voltage, long due to wrapping of milliVolts [mV]
 const float minDegenSpeed = 10; // minimum speed that degen is effective [pulses / ms]
@@ -41,7 +41,7 @@ const int encoderApin = 3;  //Best Performance: both pins have interrupt capabil
 const int encoderBpin = 2;  //Best Performance: both pins have interrupt capability
 const int lightPin = 7; //pin for the LED mosfet
 const int brakePin = 11; //pin for the motor brake MOSFET
-const int degenPWMpin = 9; //pin to set the PWM on the degen power resistors
+// const int degenPWMpin = 9; //pin to set the PWM on the degen power resistors
 
 // SUPPORTING FUNCTIONS
 static inline int8_t sgn(float val)
