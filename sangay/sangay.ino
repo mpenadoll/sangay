@@ -151,7 +151,7 @@ void updateSensors()
   lastButtonState = reading; // save the reading. Next time through the loop, it'll be the lastButtonState
 }
 
-void moveTo(long setpoint, long target)
+void moveTo(long setpoint)
 {
   static long milliVolts = 0;
   unsigned int now = millis();
@@ -159,7 +159,7 @@ void moveTo(long setpoint, long target)
   if (now - lastTime >= sampleTime)
   {
     milliVolts = computePID(setpoint, currentPosition);
-    motorDriver(milliVolts, target - currentPosition);
+    motorDriver(milliVolts);
     lastTime = now;
   }
 }
@@ -170,7 +170,7 @@ long quickStop()
   long target = stepoint;
   while (motorState != BRAKE)
   {
-    moveTo(setpoint, target);
+    moveTo(setpoint);
     updateSensors();
   }
   return target;
@@ -183,19 +183,19 @@ long stop()
   while (motorState != BRAKE)
   {
     long setpoint = integrateProfile(topSpeed);
-    moveTo(setpoint, target);
+    moveTo(setpoint);
     updateSensors();
   }
   return target;
 }
 
-void inching(int step, long startPosition)
+void inching(int step)
 {
-
-  moveTo(currentPosition + step, startPosition + );
+  static long setpoint = currentPosition;
+  setpoint += step;
+  moveTo(setpoint);
   delay(100);
 }
-
 
 void loop()
 {
@@ -245,7 +245,11 @@ void loop()
         setpoint = target;
         go = false;
       }
-      else moveTo(setpoint, target);
+      else
+      {
+        digitalWrite(brakePin, LOW); //engage brake;
+        motorDriver(0);
+      }
 
       // when "go" set target, state, and build profile
       if (go)
@@ -279,7 +283,7 @@ void loop()
     case HOMING:
 
       setpoint = integrateProfile(topSpeed);
-      moveTo(setpoint, target);
+      moveTo(setpoint);
 
       // when limit switch activated, stop, build profile, and trip flag
       // then move up and set home once limit switch deactivated
@@ -288,7 +292,7 @@ void loop()
         stop();
         while (limitSwitch)
         {
-          inching(1);
+          inching(10);
           updateSensors();
         }
         quickStop();
@@ -302,7 +306,7 @@ void loop()
         Serial.println("Homed = true");
         while (abs(currentPosition) > error)
         {
-          inching(1);
+          inching(10);
           updateSensors();
         }
         quickStop();
@@ -311,7 +315,6 @@ void loop()
 
       if (!go)
       {
-        homeFlag = false;
         dir = 1;
         state = STOPPED;
         Serial.println(stateNames[state]);
@@ -333,7 +336,7 @@ void loop()
       else
       {
         setpoint = integrateProfile(topSpeed);
-        moveTo(setpoint, target);
+        moveTo(setpoint);
         if (motorState == BRAKE && abs(currentPosition - target) <= maxError) go = false;
       }
 
