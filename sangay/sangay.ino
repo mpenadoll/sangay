@@ -50,7 +50,6 @@ void setup()
   pinMode(dirPin, OUTPUT);
   pinMode(lightPin, OUTPUT);
   pinMode(brakePin, OUTPUT);
-  pinMode(degenPWMpin, OUTPUT);
 
   //---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
    
