@@ -65,6 +65,8 @@ void setup()
   //TCCR1B = TCCR1B & B11111000 | B00000101;    // set timer 1 divisor to  1024 for PWM frequency of    30.64 Hz
   
   go = goButton.updateButton(go);
+  inchUpButton.updateButton();
+  inchDownButton.updateButton();
 
   for (int i = 0; i <= numReadings; i++)
   {
@@ -155,10 +157,9 @@ void moveTo(long setpoint)
 
 long quickStop()
 {
-  static long setpoint = currentPosition;
-  long target = setpoint;
+  long setpoint = currentPosition;
   while (abs(currentSpeed) > minSpeed) moveTo(setpoint);
-  return target;
+  return setpoint;
 }
 
 long stop()
@@ -234,8 +235,10 @@ void loop()
 
       if (inchUpButton.updateButton() || inchDownButton.updateButton())
       {
+        Serial.println("INCHING...");
         while (inchUpButton.updateButton()) inching(2*maxError);
         while (inchDownButton.updateButton()) inching(-2*maxError);
+        quickStop();
       }
 
       // when "go" set target, state, and build profile

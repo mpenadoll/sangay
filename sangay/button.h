@@ -105,6 +105,6 @@ class momentaryButton
 
     lastButtonState = reading; // save the reading. Next time through the loop, it'll be the lastButtonState
 
-    return buttonState;
+    return !buttonState; // not button state because true = HIGH, false = LOW
   }
 };
