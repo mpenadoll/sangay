@@ -24,7 +24,7 @@ float Kd = 0.0; //* derivative gain [V * s / m]
 const unsigned int sampleTime = 30; // sample time for derivative measurements [ms]
 const unsigned int debounceDelay = 50;  // the debounce time; increase if the output flickers
 const int maxError = 60; //* error [pulses] allowable for position control. 5 pulses = 0.27 mm
-const int homeOffset = -200; //* distance between limit and 0, negative number. 20 pulses = 1.07 mm
+const int homeOffset = -500; //* distance between limit and 0, negative number. 20 pulses = 1.07 mm
 const long lightPosition = 0.2 * stroke; // position to turn on lights [pulses]
 const long supplyVoltage = 24000; // system voltage, long due to wrapping of milliVolts [mV]
 const float minDegenSpeed = 10; // minimum speed that degen is effective [pulses / ms]
