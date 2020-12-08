@@ -32,9 +32,15 @@ String stateNames[3] = {"STOPPED", "HOMING", "MOVING"}; // names of states for p
 #include "PIDcontroller.h"
 #include "motorDriver.h"
 #include "profileBuilder.h"
+#include "button.h"
 
 // Initialize Encoder
 Encoder encoder(encoderApin, encoderBpin);
+
+// Initialize Buttons
+toggleButton goButton(goButtonPin, debounceDelay);
+momentaryButton inchUpButton(inchUpButtonPin, debounceDelay);
+momentaryButton inchDownButton(inchDownButtonPin, debounceDelay);
 
 void setup()
 {
@@ -44,7 +50,6 @@ void setup()
   setGains();
   encoder.write(0);
   
-  pinMode(buttonPin, INPUT_PULLUP);
   pinMode(limitSwitchPin, INPUT);
   pinMode(PWMpin, OUTPUT);
   pinMode(dirPin, OUTPUT);
@@ -59,7 +64,7 @@ void setup()
   //TCCR1B = TCCR1B & B11111000 | B00000100;    // set timer 1 divisor to   256 for PWM frequency of   122.55 Hz
   //TCCR1B = TCCR1B & B11111000 | B00000101;    // set timer 1 divisor to  1024 for PWM frequency of    30.64 Hz
   
-  updateButtons();
+  go = goButton.updateButton(go);
 
   for (int i = 0; i <= numReadings; i++)
   {
@@ -131,32 +136,6 @@ void updateEncoder()
   currentPosition = newPosition;
 }
 
-void updateButtons()
-{
-  // update buttons
-  int reading = digitalRead(buttonPin);  // read the state of the switch into a local variable
-
-  unsigned int now = millis();
-  static int lastButtonState = HIGH; // the previous reading from the input pin
-  static unsigned int lastDebounceTime = 0;  // the last time the output pin was toggled
-  // reset the debouncing timer if reading has changed
-  if (reading != lastButtonState) lastDebounceTime = now;
-
-  if ((now - lastDebounceTime) > debounceDelay && reading != buttonState)
-  {
-    // whatever the reading is at, it's been there for longer than the debounce
-    // delay, and the button state has changed
-    buttonState = reading;
-    if (buttonState == LOW)
-    {
-      go = !go;       // change system state to go
-      Serial.print("GO: ");
-      Serial.println(go);
-    }
-  }
-  lastButtonState = reading; // save the reading. Next time through the loop, it'll be the lastButtonState
-}
-
 void moveTo(long setpoint)
 {
   static long milliVolts = 0;
@@ -202,7 +181,7 @@ void inching(int step)
 
 void loop()
 {
-  updateButtons();
+  go = goButton.updateButton(go);
 
   static long target = 0; // finishing position of a profile
   static long setpoint = 0; // next step along a profile
@@ -251,6 +230,12 @@ void loop()
       {
         digitalWrite(brakePin, LOW); //engage brake;
         motorDriver(0);
+      }
+
+      if (inchUpButton.updateButton() || inchDownButton.updateButton())
+      {
+        while (inchUpButton.updateButton()) inching(2*maxError);
+        while (inchDownButton.updateButton()) inching(-2*maxError);
       }
 
       // when "go" set target, state, and build profile

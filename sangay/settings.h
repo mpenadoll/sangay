@@ -35,7 +35,9 @@ const int stopFudge = 200; //* fudge factor for stopping [pulses]
 // PINS
 const int dirPin = 4;  //pin to enable (high) driver
 const int PWMpin = 10; //pin to set pwm on driver for up
-const int buttonPin = 5;  //pushbutton signal in
+const int goButtonPin = 5;  // momentary button for GO signal
+const int inchUpButtonPin = 8; // momentary button for inching up
+const int inchDownButtonPin = 12; // momentary button for inching down
 const int limitSwitchPin = 6; //limitSwitch signal in
 const int encoderApin = 3;  //Best Performance: both pins have interrupt capability
 const int encoderBpin = 2;  //Best Performance: both pins have interrupt capability
