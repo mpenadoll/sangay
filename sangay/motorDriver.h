@@ -17,7 +17,6 @@ void motorDriver (long milliVolts)
 {
   // constrain the voltage command to system's supplyVoltage
   milliVolts = constrain(milliVolts, -supplyVoltage, supplyVoltage);
-  digitalWrite(brakePin, HIGH); //disengage brake
 
   switch (motorState)
   {
@@ -28,7 +27,9 @@ void motorDriver (long milliVolts)
       else digitalWrite(dirPin, HIGH);
       analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,minPWM,255)); //set PWM for motor driver
 
-      if (sgn(milliVolts) != sgn(currentSpeed) && currentSpeed > minDegenSpeed)
+//      Serial.println(map(abs(milliVolts),0,supplyVoltage,minPWM,255));
+
+      if ((sgn(milliVolts) != sgn(currentSpeed) && currentSpeed > minDegenSpeed) || milliVolts == 0)
       {
         motorState = DEGEN;
         Serial.println(motorStateNames[motorState]);
@@ -40,7 +41,7 @@ void motorDriver (long milliVolts)
 
       analogWrite(PWMpin, 0); //set PWM for motor drivers
 
-      if (sgn(milliVolts) == sgn(currentSpeed) || currentSpeed < minDegenSpeed)
+      if ((sgn(milliVolts) == sgn(currentSpeed) || currentSpeed < minDegenSpeed) && milliVolts != 0)
       {
         motorState = PWR_MOVE;
         Serial.println(motorStateNames[motorState]);

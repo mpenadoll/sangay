@@ -162,12 +162,15 @@ void moveTo(long setpoint)
   static long milliVolts = 0;
   unsigned int now = millis();
   static unsigned int lastTime = now - sampleTime;
+
+  digitalWrite(brakePin, HIGH); // disengage the brake
+  
   if (now - lastTime >= sampleTime)
   {
+    updateEncoder();
     milliVolts = computePID(setpoint, currentPosition);
     motorDriver(milliVolts);
     lastTime = now;
-    updateEncoder();
   }
 }
 
@@ -240,6 +243,7 @@ void loop()
       // ensure system is not moving when STOPPED
       if (abs(currentSpeed) > minSpeed)
       {
+        Serial.println("stopping");
         stop();
         Serial.println("stop() done");
       }
