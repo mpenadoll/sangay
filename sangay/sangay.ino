@@ -32,9 +32,15 @@ String stateNames[3] = {"STOPPED", "HOMING", "MOVING"}; // names of states for p
 #include "PIDcontroller.h"
 #include "motorDriver.h"
 #include "profileBuilder.h"
+#include "button.h"
 
 // Initialize Encoder
 Encoder encoder(encoderApin, encoderBpin);
+
+// Initialize Buttons
+toggleButton goButton(goButtonPin, debounceDelay);
+momentaryButton inchUpButton(inchUpButtonPin, debounceDelay);
+momentaryButton inchDownButton(inchDownButtonPin, debounceDelay);
 
 void setup()
 {
@@ -44,13 +50,11 @@ void setup()
   setGains();
   encoder.write(0);
   
-  pinMode(buttonPin, INPUT_PULLUP);
   pinMode(limitSwitchPin, INPUT);
   pinMode(PWMpin, OUTPUT);
   pinMode(dirPin, OUTPUT);
   pinMode(lightPin, OUTPUT);
   pinMode(brakePin, OUTPUT);
-  pinMode(degenPWMpin, OUTPUT);
 
   //---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
    
@@ -60,7 +64,16 @@ void setup()
   //TCCR1B = TCCR1B & B11111000 | B00000100;    // set timer 1 divisor to   256 for PWM frequency of   122.55 Hz
   //TCCR1B = TCCR1B & B11111000 | B00000101;    // set timer 1 divisor to  1024 for PWM frequency of    30.64 Hz
   
-  updateSensors();
+  go = goButton.updateButton(go);
+  inchUpButton.updateButton();
+  inchDownButton.updateButton();
+
+  for (int i = 0; i <= numReadings; i++)
+  {
+    updateEncoder();
+    delay(sampleTime);
+  }
+
   Serial.print("Stroke [mm]: ");
   Serial.println(strokeMM,4);
   Serial.print("Stroke [pulses]: ");
@@ -100,91 +113,80 @@ void setup()
   Serial.println("READY");
 }
 
-void updateSensors()
+void updateEncoder()
 {
-  // update button and limit switches
-  int reading = digitalRead(buttonPin);  // read the state of the switch into a local variable
-  limitSwitch = digitalRead(limitSwitchPin);
+  // updates the encoder and the limit switch for motion.
+  // make sure to only call this function once per sample period
 
-  // get the time now
-  unsigned int now = millis();
-  static unsigned int lastTime = now - sampleTime;
+  limitSwitch = digitalRead(limitSwitchPin);
 
   // read encoder and calculate the speed
   long newPosition = encoder.read();
   static long lastPosition = newPosition;
-  // only calculate the speed if time elapsed has been more than set sample time
-  if (now - lastTime >= sampleTime)
-  {
-    speedTotal -= speedReadings[readIndex];
-    speedReadings[readIndex] = (newPosition - lastPosition)/(float)(now - lastTime);
-    speedTotal += speedReadings[readIndex];
 
-    readIndex += 1;
-    if (readIndex >= numReadings) readIndex = 0;
+  speedTotal -= speedReadings[readIndex];
+  speedReadings[readIndex] = (newPosition - lastPosition)/(float)sampleTime;
+  speedTotal += speedReadings[readIndex];
 
-    currentSpeed = speedTotal / numReadings;
+  readIndex += 1;
+  if (readIndex >= numReadings) readIndex = 0;
 
-    // save static variables for next round
-    lastTime = now;
-    lastPosition = newPosition;
-  }
+  currentSpeed = speedTotal / numReadings;
+
+  // reset static variable and update global variable
+  lastPosition = newPosition;
   currentPosition = newPosition;
-
-  static int lastButtonState = HIGH; // the previous reading from the input pin
-  static unsigned int lastDebounceTime = 0;  // the last time the output pin was toggled
-  // reset the debouncing timer if reading has changed
-  if (reading != lastButtonState) lastDebounceTime = now;
-
-  if ((now - lastDebounceTime) > debounceDelay && reading != buttonState)
-  {
-    // whatever the reading is at, it's been there for longer than the debounce
-    // delay, and the button state has changed
-    buttonState = reading;
-    if (buttonState == LOW)
-    {
-      go = !go;       // change system state to go
-      Serial.print("GO: ");
-      Serial.println(go);
-    }
-  }
-  lastButtonState = reading; // save the reading. Next time through the loop, it'll be the lastButtonState
 }
 
-void moveTo(long setpoint, long target)
+void moveTo(long setpoint)
 {
   static long milliVolts = 0;
   unsigned int now = millis();
   static unsigned int lastTime = now - sampleTime;
+
+  digitalWrite(brakePin, HIGH); // disengage the brake
+  
   if (now - lastTime >= sampleTime)
   {
+    updateEncoder();
     milliVolts = computePID(setpoint, currentPosition);
-    motorDriver(milliVolts, target - currentPosition);
+    motorDriver(milliVolts);
     lastTime = now;
   }
+}
+
+long quickStop()
+{
+  long setpoint = currentPosition;
+  while (abs(currentSpeed) > minSpeed) moveTo(setpoint);
+  return setpoint;
 }
 
 long stop()
 {
   float topSpeed = stopProfile();
   long target = profilePositions[3];
-  while (motorState != BRAKE)
+  while (abs(currentPosition - target) > maxError || abs(currentSpeed) > minSpeed)
   {
     long setpoint = integrateProfile(topSpeed);
-    moveTo(setpoint, target);
-    updateSensors();
+    moveTo(setpoint);
   }
   return target;
 }
 
+void inching(int step)
+{
+  long setpoint = currentPosition + step;
+  while (abs(currentPosition - setpoint) > maxError) moveTo(setpoint);
+}
 
 void loop()
 {
-  updateSensors();
+  go = goButton.updateButton(go);
 
   static long target = 0; // finishing position of a profile
   static long setpoint = 0; // next step along a profile
-  static bool homeFlag = false; // flag for setting 0 when hitting limit switch
+  // static bool homeFlag = false; // flag for setting 0 when hitting limit switch
   static float topSpeed = 0; // speed to transfer from profile builder to integrator
 
   //if the position is greater than the lighting up position, turn on the LED strip
@@ -219,14 +221,25 @@ void loop()
     case STOPPED:
 
       // ensure system is not moving when STOPPED
-      if (motorState != BRAKE)
+      if (abs(currentSpeed) > minSpeed)
       {
-        target = stop();
+        Serial.println("stopping");
+        stop();
         Serial.println("stop() done");
-        setpoint = target;
-        go = false;
       }
-      else moveTo(setpoint, target);
+      else
+      {
+        digitalWrite(brakePin, LOW); //engage brake;
+        motorDriver(0);
+      }
+
+      if (inchUpButton.updateButton() || inchDownButton.updateButton())
+      {
+        Serial.println("INCHING...");
+        while (inchUpButton.updateButton()) inching(2*maxError);
+        while (inchDownButton.updateButton()) inching(-2*maxError);
+        quickStop();
+      }
 
       // when "go" set target, state, and build profile
       if (go)
@@ -259,48 +272,38 @@ void loop()
     // -------------------------------
     case HOMING:
 
+      setpoint = integrateProfile(topSpeed);
+      moveTo(setpoint);
+
       // when limit switch activated, stop, build profile, and trip flag
       // then move up and set home once limit switch deactivated
-      if (limitSwitch && !homeFlag)
+      if (limitSwitch)
       {
         stop();
-        target = stroke;
-        topSpeed = buildProfile(target, limitSpeed);
-        homeFlag = true;
-      }
-      else if (!limitSwitch && homeFlag)
-      {
-        long homeMarker = currentPosition;
-        stop();
-        encoder.write(homeOffset + (currentPosition - homeMarker));
+        while (limitSwitch) inching(2*maxError);
+        // quickStop();
+        encoder.write(homeOffset);
         for (int i = 0; i <= numReadings; i++)
         {
-          updateSensors();
+          updateEncoder();
           delay(sampleTime);
         }
-        homed = true;
-        homeFlag = false;
-        Serial.println("Homed = true");
-        target = 0;
-        topSpeed = buildProfile(target, limitSpeed);
-        Serial.print("topSpeed: ");
-        Serial.println(topSpeed);
-        printProfile();
-      }
-  
-      setpoint = integrateProfile(topSpeed);
-      moveTo(setpoint, target);
+        while (abs(currentPosition) > maxError) inching(2*maxError);
+        quickStop();
 
-      if (motorState == BRAKE && abs(currentPosition - target) <= maxError && homed) go = false;
+        homed = true;
+        Serial.println("Homed = true");
+
+        go = false;
+      }
 
       if (!go)
       {
-        homeFlag = false;
         dir = 1;
         state = STOPPED;
         Serial.println(stateNames[state]);
-        target = currentPosition;
-        setpoint = target;
+        // target = currentPosition;
+        // setpoint = target;
       }
 
       break;
@@ -317,8 +320,8 @@ void loop()
       else
       {
         setpoint = integrateProfile(topSpeed);
-        moveTo(setpoint, target);
-        if (motorState == BRAKE && abs(currentPosition - target) <= maxError) go = false;
+        moveTo(setpoint);
+        if (abs(currentPosition - target) <= maxError && abs(currentSpeed) <= minSpeed) go = false;
       }
 
       if (!go)
@@ -326,8 +329,8 @@ void loop()
         dir = -dir;
         state = STOPPED;
         Serial.println(stateNames[state]);
-        target = currentPosition;
-        setpoint = target;
+        // target = currentPosition;
+        // setpoint = target;
       }
 
       break;
