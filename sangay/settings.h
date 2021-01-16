@@ -2,7 +2,7 @@
 //* indicates motor specific settings (for test setup)
 
 // Motion Profile Variables
-float strokeMM = 500.0; //* stroke [mm] 431.8
+float strokeMM = 400.0; //* stroke [mm] 431.8
 float pulleyRadius = 24.41; // radius of the pulley [mm]
 float maxSpeedMM = 40.0; //* max speed of rack [mm/s]
 float accelMM = 100.0; //* acceleration of rack [mm/s^2]
@@ -26,10 +26,11 @@ const int maxError = 5; //* error [pulses] allowable for position control. 5 pul
 const int homeOffset = -20; //* distance between limit and 0, negative number. 20 pulses = 1.07 mm
 const long lightPosition = 0.2 * stroke; // position to turn on lights [pulses]
 const long supplyVoltage = 24000; // system voltage, long due to wrapping of milliVolts [mV]
-const float minDegenSpeed = 0.1; // minimum speed that degen is effective [pulses / ms]
+const float minDegenSpeed = 0.001; // minimum speed that degen is effective [pulses / ms]
 const int minPWM = 255 * 1.05 / 24; // minimum PWM value that motor will move [analog]
 const float minSpeed = 0.001; // minimum speed at which the brake can be applied [pulses / ms]
-const int stopFudge = 20; //* fudge factor for stopping [pulses]
+const int stopFudge = 30; //* fudge factor speed multiplier for stopping [pulses]
+const int posDir = HIGH; // direction to set motorDriver positively (note, also swap encA and B pins)
 
 // PINS
 const int dirPin = 4;  //pin to enable (high) driver

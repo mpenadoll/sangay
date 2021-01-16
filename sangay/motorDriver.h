@@ -23,8 +23,8 @@ void motorDriver (long milliVolts)
     // -------------------------------
     case PWR_MOVE:
 
-      if (sgn(milliVolts) == 1) digitalWrite(dirPin, LOW); //set direction for motor driver
-      else digitalWrite(dirPin, HIGH);
+      if (sgn(milliVolts) == 1) digitalWrite(dirPin, posDir); //set direction for motor driver
+      else digitalWrite(dirPin, !posDir);
       analogWrite(PWMpin, map(abs(milliVolts),0,supplyVoltage,minPWM,255)); //set PWM for motor driver
 
 //      Serial.println(map(abs(milliVolts),0,supplyVoltage,minPWM,255));
