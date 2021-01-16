@@ -4,7 +4,7 @@
 // Motion Profile Variables
 float strokeMM = 400.0; //* stroke [mm] 431.8
 float pulleyRadius = 24.41; // radius of the pulley [mm]
-float maxSpeedMM = 40.0; //* max speed of rack [mm/s]
+float maxSpeedMM = 70.0; //* max speed of rack [mm/s]
 float accelMM = 100.0; //* acceleration of rack [mm/s^2]
 float PPR = 1440.0; // number of pulses of encoder per rev
 
@@ -20,7 +20,7 @@ float Ki = 0.0; //* integral gain [V / (m*s)]
 float Kd = 0.0; //* derivative gain [V * s / m]
 
 // CONSTANTS
-const unsigned int sampleTime = 30; // sample time for derivative measurements [ms]
+const unsigned int sampleTime = 10; // sample time for derivative measurements [ms]
 const unsigned int debounceDelay = 50;  // the debounce time; increase if the output flickers
 const int maxError = 5; //* error [pulses] allowable for position control. 5 pulses = 0.27 mm
 const int homeOffset = -20; //* distance between limit and 0, negative number. 20 pulses = 1.07 mm

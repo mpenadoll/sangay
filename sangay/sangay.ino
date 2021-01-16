@@ -26,6 +26,14 @@ enum state_enum {STOPPED, HOMING, MOVING}; //declare the states as an enum
 state_enum state = STOPPED; // create the state variable of type state_enum
 String stateNames[3] = {"STOPPED", "HOMING", "MOVING"}; // names of states for printing
 
+// VOLTMETER VARIABLES
+int analogInput = 0;
+float Vout = 0.00;
+float Vin = 0.00;
+float R1 = 47000.00; // resistance of R1 (47K) 
+float R2 = 10000.00; // resistance of R2 (10K) 
+int val = 0;
+
 // Import Libraries
 #include <Encoder.h>
 #include "settings.h"
@@ -55,6 +63,17 @@ void setup()
   pinMode(dirPin, OUTPUT);
   pinMode(lightPin, OUTPUT);
   pinMode(brakePin, OUTPUT);
+
+  //Voltmeter
+  pinMode(analogInput, INPUT); //assigning the input port for voltmeter
+  val = analogRead(analogInput);//reads the analog input
+  Vout = (val * 5.00) / 1024.00; // formula for calculating voltage out i.e. V+, here 5.00
+  Vin = Vout * ( (R1+R2) / R2 ); // formula for calculating voltage in i.e. GND
+  if (Vin < 0.09){ //condition
+    Vin = 0.00;//statement to quash undesired reading !
+  }
+  Serial.print("Vin: ");
+  Serial.println(Vin);
 
   //---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
    
@@ -152,6 +171,23 @@ void moveTo(long setpoint)
     milliVolts = computePID(setpoint, currentPosition);
     motorDriver(milliVolts);
     lastTime = now;
+
+    
+    val = analogRead(analogInput);//reads the analog input
+    Vout = (val * 5.00) / 1024.00; // formula for calculating voltage out i.e. V+, here 5.00
+    Vin = Vout * ( (R1+R2) / R2 ); // formula for calculating voltage in i.e. GND
+    if (Vin < 0.09){ //condition
+      Vin = 0.00;//statement to quash undesired reading !
+    }
+//    Serial.print(currentSpeed);
+//    Serial.print(", ");
+//    Serial.print(currentPosition);
+//    Serial.print(", ");
+//    Serial.print(setpoint);
+//    Serial.print(", ");
+//    Serial.print(milliVolts);
+//    Serial.print(", ");
+//    Serial.println(Vin);
   }
 }
 
