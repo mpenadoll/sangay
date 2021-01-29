@@ -29,7 +29,7 @@ void motorDriver (long milliVolts)
 
 //      Serial.println(map(abs(milliVolts),0,supplyVoltage,minPWM,255));
 
-      if ((sgn(milliVolts) != sgn(currentSpeed) && currentSpeed > minDegenSpeed) || milliVolts == 0 || Vin > 26)
+      if ((sgn(milliVolts) != sgn(currentSpeed) && currentSpeed > minDegenSpeed) || milliVolts == 0)
       {
         motorState = DEGEN;
         Serial.println(motorStateNames[motorState]);
@@ -41,7 +41,7 @@ void motorDriver (long milliVolts)
 
       analogWrite(PWMpin, 0); //set PWM for motor drivers
 
-      if ((sgn(milliVolts) == sgn(currentSpeed) || currentSpeed < minDegenSpeed) && milliVolts != 0 && Vin <= 26)
+      if ((sgn(milliVolts) == sgn(currentSpeed) || currentSpeed < minDegenSpeed) && milliVolts != 0)
       {
         motorState = PWR_MOVE;
         Serial.println(motorStateNames[motorState]);

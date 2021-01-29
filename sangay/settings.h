@@ -4,7 +4,7 @@
 // Motion Profile Variables
 float strokeMM = 400.0; //* stroke [mm] 431.8
 float pulleyRadius = 24.41; // radius of the pulley [mm]
-float maxSpeedMM = 70.0; //* max speed of rack [mm/s]
+float maxSpeedMM = 80.0; //* max speed of rack [mm/s]
 float accelMM = 100.0; //* acceleration of rack [mm/s^2]
 float PPR = 1440.0; // number of pulses of encoder per rev
 

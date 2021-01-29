@@ -187,7 +187,7 @@ void moveTo(long setpoint)
 //    Serial.print(", ");
 //    Serial.print(milliVolts);
 //    Serial.print(", ");
-//    Serial.println(Vin);
+    if (Vin > 24) Serial.println(Vin);
   }
 }
 
