@@ -220,6 +220,14 @@ void loop()
 {
   go = goButton.updateButton(go);
 
+  unsigned int now = millis();
+  static unsigned int lastTime = now;
+  if (now - lastTime > 20000)
+  {
+    go = true;
+    lastTime = now;
+  }
+
   static long target = 0; // finishing position of a profile
   static long setpoint = 0; // next step along a profile
   // static bool homeFlag = false; // flag for setting 0 when hitting limit switch
