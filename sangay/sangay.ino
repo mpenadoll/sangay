@@ -222,7 +222,7 @@ void loop()
 
   unsigned int now = millis();
   static unsigned int lastTime = now;
-  if (now - lastTime > 14000)
+  if (now - lastTime > 10000)
   {
     go = true;
     lastTime = now;
