@@ -187,7 +187,7 @@ void moveTo(long setpoint)
 //    Serial.print(", ");
 //    Serial.print(milliVolts);
 //    Serial.print(", ");
-    if (Vin > 24) Serial.println(Vin);
+    if (Vin > 25 || Vin < 22) Serial.println(Vin);
   }
 }
 
@@ -221,7 +221,7 @@ void loop()
   go = goButton.updateButton(go);
 
   unsigned int now = millis();
-  static unsigned int lastTime = now;
+  static unsigned int lastTime = now - 10000;
   if (now - lastTime > 10000)
   {
     go = true;
