@@ -291,7 +291,7 @@ void loop()
         if (!homed)
         {
           state = HOMING;
-          target = -stroke;
+          target = -stroke*1.1;
           topSpeed = buildProfile(target, homeSpeed);
         }
         else if (dir == 1)
