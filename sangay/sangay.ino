@@ -19,7 +19,6 @@ float speedTotal; // sum of speed readings
 
 long profilePositions[4]; //{x0, x1, x2, x3} x0 is the start position, and x3 is the end position [pulses]
 unsigned int profileTimes[4]; //{t0, t1, t2, t3} t0 is the start time, and t3 is the end time [ms]
-bool debugPrint = false;
 
 // FSM STATES
 enum state_enum {STOPPED, HOMING, MOVING}; //declare the states as an enum
@@ -219,7 +218,12 @@ void inching(int step)
 void loop()
 {
   go = goButton.updateButton(go);
+  
+  static long target = 0; // finishing position of a profile
+  static long setpoint = 0; // next step along a profile
+  static float topSpeed = 0; // speed to transfer from profile builder to integrator
 
+  // ALT Testing >>>>
   unsigned int now = millis();
   static unsigned int lastTime = now - 10000;
   if (now - lastTime > 10000)
@@ -227,11 +231,20 @@ void loop()
     go = true;
     lastTime = now;
   }
-
-  static long target = 0; // finishing position of a profile
-  static long setpoint = 0; // next step along a profile
-  // static bool homeFlag = false; // flag for setting 0 when hitting limit switch
-  static float topSpeed = 0; // speed to transfer from profile builder to integrator
+  // ALT Testing <<<<
+  
+//  unsigned int now = millis();
+  static unsigned int lastPrintTime = now;
+  if (now - lastPrintTime >= 1500 && abs(currentSpeed) > 0)
+  {
+//    Serial.print("setpoint: ");
+//    Serial.println(setpoint);
+//    Serial.print("current pos: ");
+//    Serial.println(currentPosition);
+//    Serial.print("current speed: ");
+    Serial.println(currentSpeed);
+    lastPrintTime = now;
+  }
 
   //if the position is greater than the lighting up position, turn on the LED strip
   //otherwise, turn it off
@@ -243,20 +256,6 @@ void loop()
   {
     digitalWrite(lightPin, LOW);
   }
-
-//  unsigned int now = millis();
-//  static unsigned int lastPrintTime = now;
-//  if (now - lastPrintTime >= 700 && state == HOMING)
-//  {
-//    Serial.print("setpoint: ");
-//    Serial.println(setpoint);
-//    Serial.print("current pos: ");
-//    Serial.println(currentPosition);
-//    Serial.print("current speed: ");
-//    Serial.println(currentSpeed);
-//    debugPrint = true;
-//    lastPrintTime = now;
-//  }
 
   // FSM
   switch (state)

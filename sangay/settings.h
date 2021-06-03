@@ -11,7 +11,7 @@ float PPR = 1440.0; // number of pulses of encoder per rev
 // convert to [pulse] units. Note - gear ratio not included because encoder is on output shaft
 float stroke = PPR * 2 * strokeMM / (pulleyRadius * 2 * 3.14);  // stroke [pulses]
 float maxSpeed = PPR * 2 * maxSpeedMM / (pulleyRadius * 2 * 3.14 * 1000); // max speed [pulses/ms]
-float homeSpeed = 1 * maxSpeed;
+float homeSpeed = 0.5 * maxSpeed;
 float accel = PPR * 2 * accelMM / (pulleyRadius * 2 * 3.14 * 1000 * 1000);  // acceleration [pulses/ms^2]
 
 // Set PID Controller Settings for Position Control
