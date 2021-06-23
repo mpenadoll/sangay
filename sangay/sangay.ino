@@ -178,14 +178,6 @@ void moveTo(long setpoint)
     if (Vin < 0.09){ //condition
       Vin = 0.00;//statement to quash undesired reading !
     }
-//    Serial.print(currentSpeed);
-//    Serial.print(", ");
-//    Serial.print(currentPosition);
-//    Serial.print(", ");
-//    Serial.print(setpoint);
-//    Serial.print(", ");
-//    Serial.print(milliVolts);
-//    Serial.print(", ");
     if (Vin > 25 || Vin < 22) Serial.println(Vin);
   }
 }
@@ -223,17 +215,17 @@ void loop()
   static long setpoint = 0; // next step along a profile
   static float topSpeed = 0; // speed to transfer from profile builder to integrator
 
-  // ALT Testing >>>>
-  unsigned int now = millis();
-  static unsigned int lastTime = now - 10000;
-  if (now - lastTime > 10000)
-  {
-    go = true;
-    lastTime = now;
-  }
-  // ALT Testing <<<<
-  
-//  unsigned int now = millis();
+
+  unsigned int now = millis(); //timer for ALT and debug printing
+  // ALT Testing >>
+  // static unsigned int lastTime = now - 10000;
+  // if (now - lastTime > 10000)
+  // {
+  //   go = true;
+  //   lastTime = now;
+  // }
+  // ALT Testing <<
+  // Debug Printing >>
   static unsigned int lastPrintTime = now;
   if (now - lastPrintTime >= 1500 && abs(currentSpeed) > 0)
   {
@@ -245,6 +237,7 @@ void loop()
     Serial.println(currentSpeed);
     lastPrintTime = now;
   }
+  // Debug Printing <<
 
   //if the position is greater than the lighting up position, turn on the LED strip
   //otherwise, turn it off
@@ -345,8 +338,6 @@ void loop()
         dir = 1;
         state = STOPPED;
         Serial.println(stateNames[state]);
-        // target = currentPosition;
-        // setpoint = target;
       }
 
       break;
@@ -372,8 +363,6 @@ void loop()
         dir = -dir;
         state = STOPPED;
         Serial.println(stateNames[state]);
-        // target = currentPosition;
-        // setpoint = target;
       }
 
       break;
