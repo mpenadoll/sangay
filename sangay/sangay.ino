@@ -5,7 +5,7 @@
 
 // VARIABLES
 bool go = false; // the state of the drive system (go or stop)
-bool homed = false;  // has the stepper been properly homed
+bool homed = true;  // has the stepper been properly homed
 int limitSwitch = LOW;  // the state of the limit switch
 int8_t dir = 1; //the current state direction of the drive system (up is HIGH)
 int buttonState = HIGH; // the current reading from the input pin
@@ -26,7 +26,6 @@ state_enum state = STOPPED; // create the state variable of type state_enum
 String stateNames[3] = {"STOPPED", "HOMING", "MOVING"}; // names of states for printing
 
 // VOLTMETER VARIABLES
-int analogInput = 0;
 float Vout = 0.00;
 float Vin = 0.00;
 float R1 = 47000.00; // resistance of R1 (47K) 
@@ -62,6 +61,11 @@ void setup()
   pinMode(dirPin, OUTPUT);
   pinMode(lightPin, OUTPUT);
   pinMode(brakePin, OUTPUT);
+  pinMode(dK1pin, OUTPUT);
+  pinMode(dK2pin, OUTPUT);
+
+  digitalWrite(dK1pin, HIGH);
+  digitalWrite(dK2pin, HIGH); // turn on both safety relays
 
   //Voltmeter
   pinMode(analogInput, INPUT); //assigning the input port for voltmeter

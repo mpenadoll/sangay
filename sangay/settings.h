@@ -43,6 +43,9 @@ const int encoderApin = 3;  //Best Performance: both pins have interrupt capabil
 const int encoderBpin = 2;  //Best Performance: both pins have interrupt capability
 const int lightPin = 7; //pin for the LED mosfet
 const int brakePin = 11; //pin for the motor brake MOSFET
+const int dK1pin = A3; // digital pin for safety relay 1 mosfet
+const int dK2pin = A4; // digital pin for safety relay 2 mosfet
+const int analogInput = A0; // analog input pin for reading voltage
 
 // SUPPORTING FUNCTIONS
 static inline int8_t sgn(float val)
