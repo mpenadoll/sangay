@@ -9,10 +9,11 @@ float accelMM = 100.0; //* acceleration of rack [mm/s^2]
 float PPR = 1440.0; // number of pulses of encoder per rev
 
 // convert to [pulse] units. Note - gear ratio not included because encoder is on output shaft
-float stroke = PPR * 2 * strokeMM / (pulleyRadius * 2 * 3.14);  // stroke [pulses]
-float maxSpeed = PPR * 2 * maxSpeedMM / (pulleyRadius * 2 * 3.14 * 1000); // max speed [pulses/ms]
+float pulsePerMM = PPR * 2 / (pulleyRadius * 2 * 3.14);  // pulses per mm for use in settings
+float stroke = strokeMM * pulsePerMM;  // stroke [pulses]
+float maxSpeed = maxSpeedMM * pulsePerMM / 1000; // max speed [pulses/ms]
 float homeSpeed = 0.5 * maxSpeed;
-float accel = PPR * 2 * accelMM / (pulleyRadius * 2 * 3.14 * 1000 * 1000);  // acceleration [pulses/ms^2]
+float accel = accelMM * pulsePerMM / (1000 * 1000);  // acceleration [pulses/ms^2]
 
 // Set PID Controller Settings for Position Control
 float Kp = 7800.0; //* proportional gain [V / m]
@@ -21,15 +22,15 @@ float Kd = 0.0; //* derivative gain [V * s / m]
 
 // CONSTANTS
 const unsigned int sampleTime = 10; // sample time for derivative measurements [ms]
-const unsigned int debounceDelay = 50;  // the debounce time; increase if the output flickers
-const int maxError = 5; //* error [pulses] allowable for position control. 5 pulses = 0.27 mm
-const int homeOffset = -20; //* distance between limit and 0, negative number. 20 pulses = 1.07 mm
+const unsigned int debounceDelay = 50;  // the debounce time [ms]; increase if the output flickers
+const int maxError = 0.3 * pulsePerMM; //* error [pulses] allowable for position control
+const int homeOffset = -1 * pulsePerMM; //* distance between limit and 0, negative number [pulses]
 const long lightPosition = 0.2 * stroke; // position to turn on lights [pulses]
 const long supplyVoltage = 24000; // system voltage, long due to wrapping of milliVolts [mV]
-const float minDegenSpeed = 0.001; // minimum speed that degen is effective [pulses / ms]
-const int minPWM = 255 * 1.05 / 24; // minimum PWM value that motor will move [analog]
-const float minSpeed = 0.001; // minimum speed at which the brake can be applied [pulses / ms]
-const int stopFudge = 30; //* fudge factor speed multiplier for stopping [pulses]
+const float minDegenSpeed = 10 * pulsePerMM / 1000; // minimum speed that degen is effective [pulses / ms]
+const int minPWM = 255 * 0 / 24; //* minimum PWM value that motor will move [analog]
+const float minSpeed = 1 * pulsePerMM / 1000; // minimum speed at which the brake can be applied [pulses / ms]
+const int stopFudge = 1.6 * pulsePerMM; //* fudge factor speed multiplier for stopping [pulses]
 const int posDir = HIGH; // direction to set motorDriver positively (note, also swap encA and B pins)
 
 // PINS
