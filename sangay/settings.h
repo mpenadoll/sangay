@@ -33,6 +33,10 @@ const float minSpeed = 1 * pulsePerMM / 1000; // minimum speed at which the brak
 const int stopFudge = 1.6 * pulsePerMM; //* fudge factor speed multiplier for stopping [pulses]
 const int posDir = HIGH; // direction to set motorDriver positively (note, also swap encA and B pins)
 
+// VOLTMETERS
+const float R1 = 47000.00; // resistance of R1 (47K) 
+const float R2 = 10000.00; // resistance of R2 (10K) 
+
 // PINS
 const int dirPin = 4;  //pin to enable (high) driver
 const int PWMpin = 10; //pin to set pwm on driver for up
@@ -46,7 +50,10 @@ const int lightPin = 7; //pin for the LED mosfet
 const int brakePin = 11; //pin for the motor brake MOSFET
 const int dK1pin = A3; // digital pin for safety relay 1 mosfet
 const int dK2pin = A4; // digital pin for safety relay 2 mosfet
-const int analogInput = A0; // analog input pin for reading voltage
+const int VoutSpin = A0; // analog input pin for reading Supply voltage
+const int VoutK1pin = A1; // analog input pin for reading K1 relay voltage
+const int VoutK2pin = A2; // analog input pin for reading K2 relay voltage
+
 
 // SUPPORTING FUNCTIONS
 static inline int8_t sgn(float val)

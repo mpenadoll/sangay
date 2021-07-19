@@ -21,16 +21,10 @@ long profilePositions[4]; //{x0, x1, x2, x3} x0 is the start position, and x3 is
 unsigned int profileTimes[4]; //{t0, t1, t2, t3} t0 is the start time, and t3 is the end time [ms]
 
 // FSM STATES
-enum state_enum {STOPPED, HOMING, MOVING}; //declare the states as an enum
+enum state_enum {STOPPED, HOMING, MOVING, ERROR}; //declare the states as an enum
 state_enum state = STOPPED; // create the state variable of type state_enum
-String stateNames[3] = {"STOPPED", "HOMING", "MOVING"}; // names of states for printing
-
-// VOLTMETER VARIABLES
-float Vout = 0.00;
-float Vin = 0.00;
-float R1 = 47000.00; // resistance of R1 (47K) 
-float R2 = 10000.00; // resistance of R2 (10K) 
-int val = 0;
+String stateNames[4] = {"STOPPED", "HOMING", "MOVING", "ERROR"}; // names of states for printing
+int8_t errorCode = 0; // code for the error type
 
 // Import Libraries
 #include <Encoder.h>
@@ -39,6 +33,7 @@ int val = 0;
 #include "motorDriver.h"
 #include "profileBuilder.h"
 #include "button.h"
+#include "voltMeter.h"
 
 // Initialize Encoder
 Encoder encoder(encoderApin, encoderBpin);
@@ -47,6 +42,9 @@ Encoder encoder(encoderApin, encoderBpin);
 toggleButton goButton(goButtonPin, debounceDelay);
 momentaryButton inchUpButton(inchUpButtonPin, debounceDelay);
 momentaryButton inchDownButton(inchDownButtonPin, debounceDelay);
+voltMeter Vs(VoutSpin, R1, R2);
+voltMeter Vk1(VoutK1pin, R1, R2);
+voltMeter Vk2(VoutK2pin, R1, R2);
 
 void setup()
 {
@@ -64,19 +62,40 @@ void setup()
   pinMode(dK1pin, OUTPUT);
   pinMode(dK2pin, OUTPUT);
 
+
+  // SAFETY RELAY CHECK
   digitalWrite(dK1pin, HIGH);
   digitalWrite(dK2pin, HIGH); // turn on both safety relays
-
-  //Voltmeter
-  pinMode(analogInput, INPUT); //assigning the input port for voltmeter
-  val = analogRead(analogInput);//reads the analog input
-  Vout = (val * 5.00) / 1024.00; // formula for calculating voltage out i.e. V+, here 5.00
-  Vin = Vout * ( (R1+R2) / R2 ); // formula for calculating voltage in i.e. GND
-  if (Vin < 0.09){ //condition
-    Vin = 0.00;//statement to quash undesired reading !
+  if (Vs.readVoltage() - supplyVoltage > 2000 || Vk1.readVoltage() - supplyVoltage > 2000 || Vk2.readVoltage() - supplyVoltage > 2000)
+  {
+    state = ERROR;
+    if (Vs.readVoltage() < 100)
+    {
+      errorCode = 1;
+    }
+    else if (Vk1.readVoltage() < 100)
+    {
+      errorCode = 3;
+    }
+    else if (Vk2.readVoltage() < 100)
+    {
+      errorCode = 2;
+    }
   }
-  Serial.print("Vin: ");
-  Serial.println(Vin);
+  digitalWrite(dK1pin, HIGH); // turn on relay 1
+  digitalWrite(dK2pin, LOW); // turn off relay 2
+  if (state != ERROR && Vk2.readVoltage() > 100)
+  {
+    state = ERROR;
+    errorCode = 4;
+  }
+  digitalWrite(dK1pin, LOW); // turn off relay 1
+  digitalWrite(dK2pin, LOW); // turn off relay 2
+  if (state != ERROR && Vk1.readVoltage() > 100)
+  {
+    state = ERROR;
+    errorCode = 5;
+  }
 
   //---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
    
@@ -133,6 +152,7 @@ void setup()
   Serial.println(go);
   Serial.println("-------------------");
   Serial.println("READY");
+  Serial.println(stateNames[state]);
 }
 
 void updateEncoder()
@@ -175,14 +195,8 @@ void moveTo(long setpoint)
     motorDriver(milliVolts);
     lastTime = now;
 
-    
-    val = analogRead(analogInput);//reads the analog input
-    Vout = (val * 5.00) / 1024.00; // formula for calculating voltage out i.e. V+, here 5.00
-    Vin = Vout * ( (R1+R2) / R2 ); // formula for calculating voltage in i.e. GND
-    if (Vin < 0.09){ //condition
-      Vin = 0.00;//statement to quash undesired reading !
-    }
-    if (Vin > 25 || Vin < 22) Serial.println(Vin);
+    float Vsupply = Vs.readVoltage();
+    if (Vsupply > 25 || Vsupply < 22) Serial.println(Vsupply);
   }
 }
 
@@ -371,5 +385,13 @@ void loop()
 
       break;
     // -------------------------------
+    case ERROR:
+      if (errorCode == 0) Serial.println("ERROR: undefined");
+      else if (errorCode == 1) Serial.println("ERROR: Supply Off");
+      else if (errorCode == 2) Serial.println("ERROR: K2 Relay Open");
+      else if (errorCode == 3) Serial.println("ERROR: K1 Relay Open");
+      else if (errorCode == 4) Serial.println("ERROR: K2 Relay Closed");
+      else if (errorCode == 5) Serial.println("ERROR: K1 Relay Closed");
+      delay(1000);
   }
 }
