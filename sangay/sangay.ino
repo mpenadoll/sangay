@@ -393,5 +393,7 @@ void loop()
       else if (errorCode == 4) Serial.println("ERROR: K2 Relay Closed");
       else if (errorCode == 5) Serial.println("ERROR: K1 Relay Closed");
       delay(1000);
+      
+      break;
   }
 }

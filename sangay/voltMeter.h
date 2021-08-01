@@ -35,4 +35,4 @@ class voltMeter
     return Vin; // voltage of interest [mV]
   }
 
-}
+};
