@@ -26,7 +26,7 @@ class voltMeter
 
   float readVoltage()
   {
-    Vout = (analogRead(voltPin) * 500.0) / 1024.00; // formula for calculating voltage out from analog reading [mV]
+    Vout = (analogRead(voltPin) * 5000.0) / 1024.00; // formula for calculating voltage out from analog reading [mV]
     Vin = Vout * ( (R1+R2) / R2 ); // formula for calculating voltage in [mV]
     if (Vin < 50) //condition
     {

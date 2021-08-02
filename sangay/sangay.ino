@@ -62,40 +62,9 @@ void setup()
   pinMode(dK1pin, OUTPUT);
   pinMode(dK2pin, OUTPUT);
 
-
-  // SAFETY RELAY CHECK
-  digitalWrite(dK1pin, HIGH);
-  digitalWrite(dK2pin, HIGH); // turn on both safety relays
-  if (Vs.readVoltage() - supplyVoltage > 2000 || Vk1.readVoltage() - supplyVoltage > 2000 || Vk2.readVoltage() - supplyVoltage > 2000)
-  {
-    state = ERROR;
-    if (Vs.readVoltage() < 100)
-    {
-      errorCode = 1;
-    }
-    else if (Vk1.readVoltage() < 100)
-    {
-      errorCode = 3;
-    }
-    else if (Vk2.readVoltage() < 100)
-    {
-      errorCode = 2;
-    }
-  }
-  digitalWrite(dK1pin, HIGH); // turn on relay 1
-  digitalWrite(dK2pin, LOW); // turn off relay 2
-  if (state != ERROR && Vk2.readVoltage() > 100)
-  {
-    state = ERROR;
-    errorCode = 4;
-  }
-  digitalWrite(dK1pin, LOW); // turn off relay 1
-  digitalWrite(dK2pin, LOW); // turn off relay 2
-  if (state != ERROR && Vk1.readVoltage() > 100)
-  {
-    state = ERROR;
-    errorCode = 5;
-  }
+  digitalWrite(lightPin, LOW);
+  digitalWrite(brakePin, LOW);
+  delay(100);
 
   //---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
    
@@ -114,6 +83,8 @@ void setup()
     updateEncoder();
     delay(sampleTime);
   }
+
+  safetyCheck();
 
   Serial.print("Stroke [mm]: ");
   Serial.println(strokeMM,4);
@@ -223,6 +194,80 @@ void inching(int step)
 {
   long setpoint = currentPosition + step;
   while (abs(currentPosition - setpoint) > maxError) moveTo(setpoint);
+}
+
+void safetyCheck()
+{
+  Serial.println("SAFETY CHECK");
+  // SAFETY RELAY CHECK START
+  digitalWrite(lightPin, HIGH); // turn on LEDs to burn off voltage
+  
+  digitalWrite(dK1pin, HIGH);
+  digitalWrite(dK2pin, HIGH); // turn on both safety relays
+  delay(500);
+  Serial.print("Vs: ");
+  Serial.println(Vs.readVoltage());
+  Serial.print("Vk1: ");
+  Serial.println(Vk1.readVoltage());
+  Serial.print("Vk2: ");
+  Serial.println(Vk2.readVoltage());
+  if (abs(Vs.readVoltage() - supplyVoltage) > voltageTolerance || abs(Vk1.readVoltage() - supplyVoltage) > voltageTolerance || abs(Vk2.readVoltage() - supplyVoltage) > voltageTolerance)
+  {
+    Serial.println("ERROR");
+    state = ERROR;
+    if (Vs.readVoltage() < voltageTolerance)
+    {
+      errorCode = 1;
+    }
+    else if (Vk1.readVoltage() < voltageTolerance)
+    {
+      errorCode = 3;
+    }
+    else if (Vk2.readVoltage() < voltageTolerance)
+    {
+      errorCode = 2;
+    }
+  }
+  digitalWrite(dK1pin, HIGH); // turn on relay 1
+  digitalWrite(dK2pin, LOW); // turn off relay 2
+  delay(500);
+  if (state != ERROR && Vk2.readVoltage() > voltageTolerance)
+  {
+    Serial.println("ERROR");
+    state = ERROR;
+    errorCode = 4;
+  }
+  digitalWrite(dK1pin, LOW); // turn off relay 1
+  digitalWrite(dK2pin, LOW); // turn off relay 2
+  delay(500);
+  if (state != ERROR && Vk1.readVoltage() > voltageTolerance)
+  {
+    Serial.println("ERROR");
+    state = ERROR;
+    errorCode = 5;
+  }
+  Serial.print("Error Code: ");
+  Serial.println(errorCode);
+
+  if (errorCode <= 3)
+  {
+    digitalWrite(dK1pin, HIGH);
+    digitalWrite(dK2pin, HIGH); // turn on both safety relays
+  }
+  else if (errorCode == 4)
+  {
+    digitalWrite(dK1pin, HIGH); // turn on relay 1
+    digitalWrite(dK2pin, LOW); // turn off relay 2
+  }
+  else if (errorCode == 5)
+  {
+    digitalWrite(dK1pin, LOW); // turn off relay 1
+    digitalWrite(dK2pin, LOW); // turn off relay 2
+  }
+  delay(500);
+
+  digitalWrite(lightPin, LOW); // turn off LEDs after test
+  //SAFETY RELAY TEST END
 }
 
 void loop()
@@ -386,13 +431,23 @@ void loop()
       break;
     // -------------------------------
     case ERROR:
+      Serial.print("Vs: ");
+      Serial.println(Vs.readVoltage());
+      Serial.print("Vk1: ");
+      Serial.println(Vk1.readVoltage());
+      Serial.print("Vk2: ");
+      Serial.println(Vk2.readVoltage());
+      Serial.print("Error Code: ");
+      Serial.print(errorCode);
+      Serial.print(" | ");
       if (errorCode == 0) Serial.println("ERROR: undefined");
       else if (errorCode == 1) Serial.println("ERROR: Supply Off");
       else if (errorCode == 2) Serial.println("ERROR: K2 Relay Open");
       else if (errorCode == 3) Serial.println("ERROR: K1 Relay Open");
       else if (errorCode == 4) Serial.println("ERROR: K2 Relay Closed");
       else if (errorCode == 5) Serial.println("ERROR: K1 Relay Closed");
-      delay(1000);
+      Serial.println("-------------------");
+      delay(2000);
       
       break;
   }

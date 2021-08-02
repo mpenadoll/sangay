@@ -27,6 +27,7 @@ const int maxError = 3 * pulsePerMM; //* error [pulses] allowable for position c
 const int homeOffset = -1 * pulsePerMM; //* distance between limit and 0, negative number [pulses]
 const long lightPosition = 0.2 * stroke; // position to turn on lights [pulses]
 const long supplyVoltage = 24000; // system voltage, long due to wrapping of milliVolts [mV]
+const int voltageTolerance = 2000; // noise voltage for error detection [mV]
 const float minDegenSpeed = 10 * pulsePerMM / 1000; // minimum speed that degen is effective [pulses / ms]
 const int minPWM = 255 * 0 / 24; //* minimum PWM value that motor will move [analog]
 const float minSpeed = 1 * pulsePerMM / 1000; // minimum speed at which the brake can be applied [pulses / ms]
