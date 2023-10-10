@@ -86,6 +86,8 @@ void setup()
 
   safetyCheck();
 
+  Serial.print("PulsePerMM: ");
+  Serial.println(pulsePerMM,4);
   Serial.print("Stroke [mm]: ");
   Serial.println(strokeMM,4);
   Serial.print("Stroke [pulses]: ");
@@ -98,6 +100,16 @@ void setup()
   Serial.println(accelMM,4);
   Serial.print("Acceleration [pulses/ms^2]: ");
   Serial.println(accel,4);
+  Serial.print("Max Error [pulses]: ");
+  Serial.println(maxError);
+  Serial.print("Home Offset [pulses]: ");
+  Serial.println(homeOffset);
+  Serial.print("Min Degen Speed [pulses / ms]: ");
+  Serial.println(minDegenSpeed,5);
+  Serial.print("Min Speed [pulses / ms]: ");
+  Serial.println(minSpeed,5);
+  Serial.print("Stop Fudge [pulses]: ");
+  Serial.println(stopFudge);
   Serial.println("-------------------");
   Serial.print("Kp: ");
   Serial.println(Kp,4);
@@ -166,8 +178,8 @@ void moveTo(long setpoint)
     motorDriver(milliVolts);
     lastTime = now;
 
-    float Vsupply = Vs.readVoltage();
-    if (Vsupply > 25 || Vsupply < 22) Serial.println(Vsupply);
+    // float Vsupply = Vs.readVoltage();
+    // if (Vsupply > 25 || Vsupply < 22) Serial.println(Vsupply);
   }
 }
 
@@ -230,7 +242,7 @@ void safetyCheck()
   }
   digitalWrite(dK1pin, HIGH); // turn on relay 1
   digitalWrite(dK2pin, LOW); // turn off relay 2
-  delay(500);
+  delay(2000);
   if (state != ERROR && Vk2.readVoltage() > voltageTolerance)
   {
     Serial.println("ERROR");
@@ -297,7 +309,7 @@ void loop()
 //    Serial.print("current pos: ");
 //    Serial.println(currentPosition);
 //    Serial.print("current speed: ");
-    Serial.println(currentSpeed);
+    // Serial.println(currentSpeed);
     lastPrintTime = now;
   }
   // Debug Printing <<
@@ -324,7 +336,8 @@ void loop()
       {
         Serial.println("stopping");
         stop();
-        Serial.println("stop() done");
+        Serial.print("stop() done, position: ");
+        Serial.println(currentPosition);
       }
       else
       {
