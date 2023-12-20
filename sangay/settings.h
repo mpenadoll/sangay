@@ -5,14 +5,14 @@
 float strokeMM = 498.5; //* stroke [mm] 431.8
 float pulleyRadius = 24.41; // radius of the pulley [mm]
 float maxSpeedMM = 80.0; //* max speed of rack [mm/s]
-float accelMM = 100.0; //* acceleration of rack [mm/s^2]
+float accelMM = 80.0; //* acceleration of rack [mm/s^2]
 float PPR = 1440.0; // number of pulses of encoder per rev
 
 // convert to [pulse] units. Note - gear ratio not included because encoder is on output shaft
 float pulsePerMM = PPR * 2 / (pulleyRadius * 2 * 3.14);  // pulses per mm for use in settings
 float stroke = strokeMM * pulsePerMM;  // stroke [pulses]
 float maxSpeed = maxSpeedMM * pulsePerMM / 1000.0; // max speed [pulses/ms]
-float homeSpeed = 0.4 * maxSpeed;
+float homeSpeed = 0.25 * maxSpeed;
 float accel = accelMM * pulsePerMM / (1000.0 * 1000.0);  // acceleration [pulses/ms^2]
 
 // Set PID Controller Settings for Position Control
@@ -31,7 +31,7 @@ const int voltageTolerance = 2000; // noise voltage for error detection [mV]
 const float minDegenSpeed = 0.1 * pulsePerMM / 1000; // minimum speed that degen is effective [pulses / ms]
 const int minPWM = 255 * 1.05 / 24; // minimum PWM value that motor will move [analog]
 const float minSpeed = 0.1 * pulsePerMM / 1000; // minimum speed at which the brake can be applied [pulses / ms]
-const int stopFudge = 1.6 * pulsePerMM; // fudge factor speed multiplier for stopping [pulses]
+int stopFudge = 37; // fudge factor speed multiplier for stopping [ms]
 const int posDir = HIGH; // direction to set motorDriver positively (note, also swap encA and B pins)
 
 // VOLTMETERS

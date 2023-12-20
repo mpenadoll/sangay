@@ -32,7 +32,7 @@ void motorDriver (long milliVolts)
       if ((sgn(milliVolts) != sgn(currentSpeed) && currentSpeed > minDegenSpeed) || milliVolts == 0)
       {
         motorState = DEGEN;
-        Serial.println(motorStateNames[motorState]);
+        // Serial.println(motorStateNames[motorState]);
       }
 
       break;
@@ -44,7 +44,7 @@ void motorDriver (long milliVolts)
       if ((sgn(milliVolts) == sgn(currentSpeed) || currentSpeed < minDegenSpeed) && milliVolts != 0)
       {
         motorState = PWR_MOVE;
-        Serial.println(motorStateNames[motorState]);
+        // Serial.println(motorStateNames[motorState]);
       }
 
       break;

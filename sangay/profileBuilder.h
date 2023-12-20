@@ -79,8 +79,8 @@ float stopProfile()
   // starting point t0, x0
   profileTimes[0] = 0; //set t0 to time 0 [ms]
   profilePositions[0] = currentPosition + currentSpeed*stopFudge; //set x0 to current position [pulses]
-  Serial.print("Stop Fudge: ");
-  Serial.println(currentSpeed*stopFudge);
+  // Serial.print("Stop Fudge: ");
+  // Serial.println(currentSpeed*stopFudge);
 
   // set point 1 and 2 equal to point 0
   profilePositions[1] = profilePositions[0];
@@ -105,7 +105,7 @@ long integrateProfile(float topSpeed)
   if (integrateStart)
   {
     startTime = now;
-    Serial.println("Integrate Started");
+    // Serial.println("Integrate Started");
     integrateStart = false;
   }
   unsigned int duration = now - startTime; //time since start of profile

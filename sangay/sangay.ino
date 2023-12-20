@@ -12,7 +12,7 @@ int buttonState = HIGH; // the current reading from the input pin
 long currentPosition; //the current position [pulses]
 
 float currentSpeed; //the current speed (average) [pulses / ms]
-const int numReadings = 4; //number of readings for speed moving average
+const int numReadings = 6; //number of readings for speed moving average
 int readIndex; //index to update the readings
 float speedReadings[numReadings]; // array for speed moving average
 float speedTotal; // sum of speed readings
@@ -334,7 +334,7 @@ void loop()
       // ensure system is not moving when STOPPED
       if (abs(currentSpeed) > minSpeed)
       {
-        Serial.println("stopping");
+        // Serial.println("stopping");
         stop();
         Serial.print("stop() done, position: ");
         Serial.println(currentPosition);
