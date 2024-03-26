@@ -2,7 +2,7 @@
 //* indicates motor specific settings (for test setup)
 
 // Motion Profile Variables
-float strokeMM = 498.5; //* stroke [mm] 431.8
+float strokeMM = 500; //* stroke [mm] 431.8
 float pulleyRadius = 24.41; // radius of the pulley [mm]
 float maxSpeedMM = 80.0; //* max speed of rack [mm/s]
 float accelMM = 80.0; //* acceleration of rack [mm/s^2]
